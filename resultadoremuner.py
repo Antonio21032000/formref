@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime, date
 
 # Configuração da página
-st.set_page_config(page_title="BR Insider Analysis", layout="wide")
+st.set_page_config(page_title="BR Insider Analysis", layout="wide", initial_sidebar_state="collapsed")
 
 # Funções de formatação
 def format_currency(value):
@@ -14,9 +14,11 @@ def format_currency(value):
 
 def format_number(value):
     try:
-        return f"{float(value):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        if pd.isna(value):
+            return "N/A"
+        return f"{float(value):,.2f}%".replace(",", "X").replace(".", ",").replace("X", ".")
     except:
-        return "0,00"
+        return "N/A"
 
 def get_default_dates():
     """Retorna datas padrão seguras para o date_input"""
@@ -42,14 +44,15 @@ st.markdown("""
         }
         
         .dataframe {
-            font-size: 14px !important;
+            font-size: 16px !important;
+            width: 100% !important;
         }
         
         .filter-container {
             background-color: white;
-            padding: 10px;
+            padding: 15px;
             border-radius: 5px;
-            margin-bottom: 15px;
+            margin-bottom: 25px;
         }
         
         .stApp {
@@ -57,8 +60,20 @@ st.markdown("""
         }
         
         th {
-            background-color: #f0f2f6;
+            background-color: #f0f2f6 !important;
             font-weight: bold !important;
+            font-size: 16px !important;
+            padding: 15px !important;
+            text-align: center !important;
+        }
+        
+        td {
+            padding: 12px !important;
+            text-align: right !important;
+        }
+        
+        td:first-child {
+            text-align: left !important;
         }
         
         tr:nth-child(even) {
@@ -76,15 +91,21 @@ st.markdown("""
         .stDateInput {
             background-color: white;
         }
+        
+        [data-testid="stDataFrame"] {
+            width: 100%;
+        }
+        
+        div[data-testid="stVerticalBlock"] > div {
+            padding: 0 5%;
+        }
     </style>
 """, unsafe_allow_html=True)
 
 def load_data():
     try:
-        # Carregar dados do arquivo Excel
         df = pd.read_excel('remtotal2024_novo.xlsx')
         
-        # Selecionar apenas as colunas desejadas
         selected_columns = [
             'Nome_Companhia',
             'Total_Remuneracao',
@@ -93,12 +114,6 @@ def load_data():
             '% da Remuneração Total sobre o Net Income LTM'
         ]
         
-        # Verificar se todas as colunas existem no DataFrame
-        for col in selected_columns:
-            if col not in df.columns:
-                st.error(f"Coluna {col} não encontrada no arquivo")
-                return pd.DataFrame()
-                
         return df[selected_columns]
     except Exception as e:
         st.error(f"Erro ao carregar dados: {str(e)}")
@@ -163,7 +178,8 @@ def main():
             '% da Remuneração Total sobre o EBITDA': '% EBITDA',
             '% da Remuneração Total sobre o Net Income LTM': '% Net Income'
         },
-        height=600
+        height=800,
+        use_container_width=True
     )
 
 if __name__ == "__main__":
