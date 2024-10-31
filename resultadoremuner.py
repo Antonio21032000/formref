@@ -1,21 +1,23 @@
-import pandas as pd
-
-df_remuner = pd.read_excel('remtotal2024_novo.xlsx')
-
-# filtra as colunas Nome_Companhia, Total_Remuneracao, "% da Remuneração Total sobre o Market Cap", % da Remuneracao sobre o EBITDA, % da Remuneradcao sobre o Net Income LTM
-
-df_remuner = df_remuner[['Nome_Companhia', 'Total_Remuneracao', '% da Remuneração Total sobre o Market Cap', '% da Remuneração Total sobre o EBITDA', '% da Remuneração Total sobre o Net Income LTM']]
-
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import locale
+import numpy as np
 
 # Configuração da página
 st.set_page_config(page_title="BR Insider Analysis", layout="wide")
 
-# Configuração do locale para formato brasileiro
-locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
+# Funções de formatação
+def format_currency(value):
+    try:
+        return f"R$ {float(value):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    except:
+        return "R$ 0,00"
+
+def format_number(value):
+    try:
+        return f"{float(value):,.0f}".replace(",", ".")
+    except:
+        return "0"
 
 # Estilo CSS personalizado
 st.markdown("""
@@ -67,24 +69,40 @@ st.markdown("""
         tr:nth-child(odd) {
             background-color: white;
         }
+        
+        /* Ajustes nos selects */
+        .stSelectbox {
+            background-color: white;
+        }
+        
+        /* Ajustes na data */
+        .stDateInput {
+            background-color: white;
+        }
     </style>
 """, unsafe_allow_html=True)
 
 def load_data():
-    # Simulação dos dados - substitua pelo seu arquivo real
-    data = {
-        'Data_Referencia': ['2024-07-01', '2024-07-01', '2024-07-01'],
-        'Empresa': ['CIA SANEAMENTO BASICO EST SAO PAULO', 'AMERICANAS S.A. - em Recuperação Judicial', 'AMERICANAS S.A. - em Recuperação Judicial'],
-        'Tipo_Cargo': ['Controlador ou Vinculado'] * 3,
-        'Tipo_Movimentacao': ['Venda à vista', 'Subscrição', 'Subscrição'],
-        'Tipo_Ativo': ['Ações'] * 3,
-        'Caracteristica_Valor_Mobiliario': ['ON'] * 3,
-        'Data_Movimentacao': ['2024-07-22', '2024-07-25', '2024-07-25'],
-        'Quantidade': [220470, 5404616788, 2802465177],
-        'Preco_Unitario': [67.00, 1.30, 1.30],
-        'Volume_Financeiro': [14771490.00, 7026001824.40, 3643204730.10]
-    }
-    return pd.DataFrame(data)
+    try:
+        # Carregar dados do arquivo Excel
+        df = pd.read_excel('remtotal2024_novo.xlsx')
+        required_columns = [
+            'Data_Referencia', 'Empresa', 'Tipo_Cargo', 'Tipo_Movimentacao',
+            'Tipo_Ativo', 'Caracteristica_Valor_Mobiliario', 'Data_Movimentacao',
+            'Quantidade', 'Preco_Unitario', 'Volume_Financeiro'
+        ]
+        
+        # Verificar se todas as colunas necessárias existem
+        for col in required_columns:
+            if col not in df.columns:
+                df[col] = None
+                
+        return df[required_columns]
+    
+    except Exception as e:
+        st.error(f"Erro ao carregar dados: {str(e)}")
+        # Retornar DataFrame vazio com as colunas necessárias
+        return pd.DataFrame(columns=required_columns)
 
 def main():
     # Título personalizado
@@ -97,6 +115,11 @@ def main():
     # Carregar dados
     df = load_data()
     
+    # Converter colunas de data
+    date_columns = ['Data_Referencia', 'Data_Movimentacao']
+    for col in date_columns:
+        df[col] = pd.to_datetime(df[col], errors='coerce')
+    
     # Linha de filtros
     col1, col2, col3 = st.columns(3)
     
@@ -104,16 +127,18 @@ def main():
         st.markdown('<div class="filter-container">', unsafe_allow_html=True)
         empresas = st.selectbox(
             'Empresas',
-            options=['Choose an option'] + list(df['Empresa'].unique())
+            options=['Todas as empresas'] + sorted(df['Empresa'].unique().tolist())
         )
         st.markdown('</div>', unsafe_allow_html=True)
         
     with col2:
         st.markdown('<div class="filter-container">', unsafe_allow_html=True)
-        dates = st.date_input(
+        date_range = st.date_input(
             'Período',
-            value=(datetime(2024, 1, 1), datetime(2024, 9, 1)),
-            format="YYYY/MM/DD"
+            value=(
+                df['Data_Movimentacao'].min().date() if not df['Data_Movimentacao'].empty else datetime.now().date(),
+                df['Data_Movimentacao'].max().date() if not df['Data_Movimentacao'].empty else datetime.now().date()
+            )
         )
         st.markdown('</div>', unsafe_allow_html=True)
         
@@ -121,28 +146,45 @@ def main():
         st.markdown('<div class="filter-container">', unsafe_allow_html=True)
         tipo_mov = st.selectbox(
             'Tipo de Movimentação',
-            options=['Choose an option'] + list(df['Tipo_Movimentacao'].unique())
+            options=['Todos os tipos'] + sorted(df['Tipo_Movimentacao'].unique().tolist())
         )
         st.markdown('</div>', unsafe_allow_html=True)
     
-    # Formatação dos dados para exibição
-    df['Data_Referencia'] = pd.to_datetime(df['Data_Referencia']).dt.strftime('%Y-%m-%d %H:%M:%S')
-    df['Data_Movimentacao'] = pd.to_datetime(df['Data_Movimentacao']).dt.strftime('%Y-%m-%d')
-    df['Preco_Unitario'] = df['Preco_Unitario'].apply(lambda x: f'R$ {x:.2f}')
-    df['Volume_Financeiro'] = df['Volume_Financeiro'].apply(lambda x: f'R$ {x:,.2f}')
-    df['Quantidade'] = df['Quantidade'].apply(lambda x: f'{x:,}')
+    # Aplicar filtros
+    filtered_df = df.copy()
+    
+    if empresas != 'Todas as empresas':
+        filtered_df = filtered_df[filtered_df['Empresa'] == empresas]
+    
+    if tipo_mov != 'Todos os tipos':
+        filtered_df = filtered_df[filtered_df['Tipo_Movimentacao'] == tipo_mov]
+    
+    filtered_df = filtered_df[
+        (filtered_df['Data_Movimentacao'].dt.date >= date_range[0]) &
+        (filtered_df['Data_Movimentacao'].dt.date <= date_range[1])
+    ]
+    
+    # Formatar dados para exibição
+    display_df = filtered_df.copy()
+    display_df['Data_Referencia'] = display_df['Data_Referencia'].dt.strftime('%Y-%m-%d')
+    display_df['Data_Movimentacao'] = display_df['Data_Movimentacao'].dt.strftime('%Y-%m-%d')
+    display_df['Quantidade'] = display_df['Quantidade'].apply(format_number)
+    display_df['Preco_Unitario'] = display_df['Preco_Unitario'].apply(format_currency)
+    display_df['Volume_Financeiro'] = display_df['Volume_Financeiro'].apply(format_currency)
     
     # Exibir tabela com estilo
     st.dataframe(
-        df,
-        hide_index=False,
+        display_df,
+        hide_index=True,
         column_config={
             'Data_Referencia': 'Data Referência',
+            'Empresa': 'Empresa',
             'Tipo_Cargo': 'Tipo Cargo',
             'Tipo_Movimentacao': 'Tipo Movimentação',
             'Tipo_Ativo': 'Tipo Ativo',
             'Caracteristica_Valor_Mobiliario': 'Característica Valor Mobiliário',
             'Data_Movimentacao': 'Data Movimentação',
+            'Quantidade': 'Quantidade',
             'Preco_Unitario': 'Preço Unitário',
             'Volume_Financeiro': 'Volume Financeiro (R$)'
         },
@@ -151,7 +193,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-print(df_remuner.head())
-print(df_remuner.info())
-
