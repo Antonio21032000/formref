@@ -166,23 +166,32 @@ def main():
     if empresas != 'Todas as empresas':
         filtered_df = filtered_df[filtered_df['Nome_Companhia'] == empresas]
     
-    # Formatar as colunas
+    # Criar colunas formatadas para exibição mantendo os valores originais para ordenação
     display_df = filtered_df.copy()
-    display_df['Total_Remuneracao'] = display_df['Total_Remuneracao'].apply(format_currency)
-    display_df['% da Remuneração Total sobre o Market Cap'] = display_df['% da Remuneração Total sobre o Market Cap'].apply(format_number)
-    display_df['% da Remuneração Total sobre o EBITDA'] = display_df['% da Remuneração Total sobre o EBITDA'].apply(format_number)
-    display_df['% da Remuneração Total sobre o Net Income LTM'] = display_df['% da Remuneração Total sobre o Net Income LTM'].apply(format_number)
     
-    # Exibir tabela
+    # Exibir tabela com colunas ordenáveis
     st.dataframe(
         display_df,
         hide_index=True,
         column_config={
             'Nome_Companhia': 'Empresa',
-            'Total_Remuneracao': 'Remuneração Total',
-            '% da Remuneração Total sobre o Market Cap': '% Market Cap',
-            '% da Remuneração Total sobre o EBITDA': '% EBITDA',
-            '% da Remuneração Total sobre o Net Income LTM': '% Net Income'
+            'Total_Remuneracao': st.column_config.NumberColumn(
+                'Remuneração Total',
+                format="R$ %,.2f",
+                help="Remuneração total em reais"
+            ),
+            '% da Remuneração Total sobre o Market Cap': st.column_config.NumberColumn(
+                '% Market Cap',
+                format="%.2f%%"
+            ),
+            '% da Remuneração Total sobre o EBITDA': st.column_config.NumberColumn(
+                '% EBITDA',
+                format="%.2f%%"
+            ),
+            '% da Remuneração Total sobre o Net Income LTM': st.column_config.NumberColumn(
+                '% Net Income',
+                format="%.2f%%"
+            )
         },
         height=800,
         use_container_width=True
