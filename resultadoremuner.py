@@ -1,15 +1,8 @@
 import streamlit as st
 import pandas as pd
-import locale
 
 # Configuração da página
 st.set_page_config(page_title="BR Insider Analysis", layout="wide", initial_sidebar_state="collapsed")
-
-# Configurar locale para formato brasileiro
-try:
-    locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
-except:
-    pass
 
 # Estilo CSS personalizado
 st.markdown("""
@@ -120,7 +113,7 @@ def format_number_br(value):
     try:
         if pd.isna(value):
             return "N/A"
-        return f"{value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        return f"{value:_.2f}".replace(".", ",").replace("_", ".")
     except:
         return value
 
@@ -211,11 +204,10 @@ def main():
         display_df,
         hide_index=True,
         column_config={
-            'Empresa': 'Empresa',
-            'Remuneração Total': st.column_config.NumberColumn(
+            'Empresa': st.column_config.TextColumn('Empresa'),
+            'Remuneração Total': st.column_config.Column(
                 'Remuneração Total',
-                help='Remuneração total em reais',
-                format="{:,.2f}",
+                help='Remuneração total em reais'
             ),
             '% Market Cap': st.column_config.NumberColumn(
                 '% Market Cap',
