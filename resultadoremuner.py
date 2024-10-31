@@ -20,14 +20,6 @@ def format_number(value):
     except:
         return "N/A"
 
-def prepare_number_for_sorting(value):
-    try:
-        if pd.isna(value):
-            return -np.inf
-        return float(value)
-    except:
-        return -np.inf
-
 # Estilo CSS personalizado
 st.markdown("""
     <style>
@@ -70,7 +62,6 @@ st.markdown("""
             font-size: 16px !important;
             padding: 15px !important;
             text-align: center !important;
-            cursor: pointer !important;
         }
         
         td {
@@ -132,10 +123,10 @@ def load_data():
         
         df = df[selected_columns]
         
-        # Converter colunas para tipo numérico para permitir ordenação
-        for col in df.columns:
-            if col != 'Nome_Companhia':
-                df[col] = pd.to_numeric(df[col], errors='coerce')
+        # Converter colunas para tipo numérico
+        numeric_columns = selected_columns[1:]  # Todas exceto Nome_Companhia
+        for col in numeric_columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
                 
         return df
     except Exception as e:
@@ -171,27 +162,26 @@ def main():
     if empresas != 'Todas as empresas':
         filtered_df = filtered_df[filtered_df['Nome_Companhia'] == empresas]
     
-    # Criar colunas de ordenação
-    sort_df = filtered_df.copy()
-    
     # Formatar as colunas para exibição
     display_df = filtered_df.copy()
-    display_df['Total_Remuneracao'] = display_df['Total_Remuneracao'].apply(format_currency)
-    display_df['% da Remuneração Total sobre o Market Cap'] = display_df['% da Remuneração Total sobre o Market Cap'].apply(format_number)
-    display_df['% da Remuneração Total sobre o EBITDA'] = display_df['% da Remuneração Total sobre o EBITDA'].apply(format_number)
-    display_df['% da Remuneração Total sobre o Net Income LTM'] = display_df['% da Remuneração Total sobre o Net Income LTM'].apply(format_number)
+    display_df = display_df.style.format({
+        'Total_Remuneracao': lambda x: format_currency(x),
+        '% da Remuneração Total sobre o Market Cap': lambda x: format_number(x),
+        '% da Remuneração Total sobre o EBITDA': lambda x: format_number(x),
+        '% da Remuneração Total sobre o Net Income LTM': lambda x: format_number(x)
+    })
     
     # Exibir tabela
     st.dataframe(
         display_df,
-        hide_index=True,
         column_config={
             'Nome_Companhia': 'Empresa',
-            'Total_Remuneracao': st.column_config.Column('Remuneração Total', sortable=True),
-            '% da Remuneração Total sobre o Market Cap': st.column_config.Column('% Market Cap', sortable=True),
-            '% da Remuneração Total sobre o EBITDA': st.column_config.Column('% EBITDA', sortable=True),
-            '% da Remuneração Total sobre o Net Income LTM': st.column_config.Column('% Net Income', sortable=True)
+            'Total_Remuneracao': 'Remuneração Total',
+            '% da Remuneração Total sobre o Market Cap': '% Market Cap',
+            '% da Remuneração Total sobre o EBITDA': '% EBITDA',
+            '% da Remuneração Total sobre o Net Income LTM': '% Net Income'
         },
+        hide_index=True,
         height=800,
         use_container_width=False
     )
