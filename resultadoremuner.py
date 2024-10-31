@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 
 # Configuração da página
 st.set_page_config(page_title="BR Insider Analysis", layout="wide", initial_sidebar_state="collapsed")
@@ -122,9 +121,8 @@ def load_data():
             '% da Remuneração Total sobre o Net Income LTM'
         ]
         
-        # Converter Total_Remuneracao para numérico sem símbolos
-        df['Total_Remuneracao'] = df['Total_Remuneracao'].astype(str).str.replace(r'[^\d.]', '', regex=True)
-        df['Total_Remuneracao'] = pd.to_numeric(df['Total_Remuneracao'], errors='coerce')
+        # Converter Total_Remuneracao para float
+        df['Total_Remuneracao'] = pd.to_numeric(df['Total_Remuneracao'].astype(str).str.replace(r'[^\d.]', '', regex=True), errors='coerce')
         
         return df[selected_columns]
     except Exception as e:
@@ -163,7 +161,7 @@ def main():
     # Criar DataFrame para exibição
     display_df = pd.DataFrame({
         'Empresa': filtered_df['Nome_Companhia'],
-        'Remuneração Total': pd.to_numeric(filtered_df['Total_Remuneracao'], errors='coerce'),
+        'Remuneração Total': filtered_df['Total_Remuneracao'],
         '% Market Cap': filtered_df['% da Remuneração Total sobre o Market Cap'] * 100,
         '% EBITDA': filtered_df['% da Remuneração Total sobre o EBITDA'] * 100,
         '% Net Income': filtered_df['% da Remuneração Total sobre o Net Income LTM'] * 100
@@ -172,7 +170,6 @@ def main():
     # Botão de download
     st.markdown('<div class="download-button">', unsafe_allow_html=True)
     excel_data = display_df.copy()
-    excel_data['Remuneração Total'] = excel_data['Remuneração Total'].apply(lambda x: f"R$ {x:,.2f}" if pd.notnull(x) else "N/A")
     excel_data['% Market Cap'] = excel_data['% Market Cap'].apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "N/A")
     excel_data['% EBITDA'] = excel_data['% EBITDA'].apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "N/A")
     excel_data['% Net Income'] = excel_data['% Net Income'].apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "N/A")
@@ -199,10 +196,7 @@ def main():
         hide_index=True,
         column_config={
             'Empresa': 'Empresa',
-            'Remuneração Total': st.column_config.NumberColumn(
-                'Remuneração Total',
-                format="R$ %,.2f"
-            ),
+            'Remuneração Total': 'Remuneração Total',
             '% Market Cap': st.column_config.NumberColumn(
                 '% Market Cap',
                 format="%.2f%%"
