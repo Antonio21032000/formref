@@ -35,6 +35,10 @@ st.markdown("""
         .stApp {
             background-color: #0A192F;
         }
+
+        header[data-testid="stHeader"] {
+            display: none;
+        }
         
         .dataframe {
             font-size: 16px !important;
