@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, date
 import numpy as np
 
 # Configuração da página
@@ -18,6 +18,23 @@ def format_number(value):
         return f"{float(value):,.0f}".replace(",", ".")
     except:
         return "0"
+
+def get_default_dates(df):
+    """Retorna datas padrão seguras para o date_input"""
+    today = date.today()
+    try:
+        if df.empty:
+            return (today, today)
+        
+        min_date = df['Data_Movimentacao'].min()
+        max_date = df['Data_Movimentacao'].max()
+        
+        if pd.isna(min_date) or pd.isna(max_date):
+            return (today, today)
+            
+        return (min_date.date(), max_date.date())
+    except:
+        return (today, today)
 
 # Estilo CSS personalizado
 st.markdown("""
@@ -115,10 +132,12 @@ def main():
     # Carregar dados
     df = load_data()
     
-    # Converter colunas de data
-    date_columns = ['Data_Referencia', 'Data_Movimentacao']
-    for col in date_columns:
-        df[col] = pd.to_datetime(df[col], errors='coerce')
+    # Converter colunas de data com tratamento de erros
+    for col in ['Data_Referencia', 'Data_Movimentacao']:
+        try:
+            df[col] = pd.to_datetime(df[col], errors='coerce')
+        except:
+            df[col] = pd.NaT
     
     # Linha de filtros
     col1, col2, col3 = st.columns(3)
@@ -127,18 +146,18 @@ def main():
         st.markdown('<div class="filter-container">', unsafe_allow_html=True)
         empresas = st.selectbox(
             'Empresas',
-            options=['Todas as empresas'] + sorted(df['Empresa'].unique().tolist())
+            options=['Todas as empresas'] + sorted(df['Empresa'].dropna().unique().tolist())
         )
         st.markdown('</div>', unsafe_allow_html=True)
         
     with col2:
         st.markdown('<div class="filter-container">', unsafe_allow_html=True)
+        default_start, default_end = get_default_dates(df)
         date_range = st.date_input(
             'Período',
-            value=(
-                df['Data_Movimentacao'].min().date() if not df['Data_Movimentacao'].empty else datetime.now().date(),
-                df['Data_Movimentacao'].max().date() if not df['Data_Movimentacao'].empty else datetime.now().date()
-            )
+            value=(default_start, default_end),
+            min_value=default_start,
+            max_value=default_end
         )
         st.markdown('</div>', unsafe_allow_html=True)
         
@@ -146,11 +165,11 @@ def main():
         st.markdown('<div class="filter-container">', unsafe_allow_html=True)
         tipo_mov = st.selectbox(
             'Tipo de Movimentação',
-            options=['Todos os tipos'] + sorted(df['Tipo_Movimentacao'].unique().tolist())
+            options=['Todos os tipos'] + sorted(df['Tipo_Movimentacao'].dropna().unique().tolist())
         )
         st.markdown('</div>', unsafe_allow_html=True)
     
-    # Aplicar filtros
+    # Aplicar filtros com tratamento de erros
     filtered_df = df.copy()
     
     if empresas != 'Todas as empresas':
@@ -159,15 +178,21 @@ def main():
     if tipo_mov != 'Todos os tipos':
         filtered_df = filtered_df[filtered_df['Tipo_Movimentacao'] == tipo_mov]
     
+    # Filtro de data com tratamento de valores nulos
     filtered_df = filtered_df[
+        (filtered_df['Data_Movimentacao'].notna()) &
         (filtered_df['Data_Movimentacao'].dt.date >= date_range[0]) &
         (filtered_df['Data_Movimentacao'].dt.date <= date_range[1])
     ]
     
-    # Formatar dados para exibição
+    # Formatar dados para exibição com tratamento de erros
     display_df = filtered_df.copy()
-    display_df['Data_Referencia'] = display_df['Data_Referencia'].dt.strftime('%Y-%m-%d')
-    display_df['Data_Movimentacao'] = display_df['Data_Movimentacao'].dt.strftime('%Y-%m-%d')
+    display_df['Data_Referencia'] = display_df['Data_Referencia'].apply(
+        lambda x: x.strftime('%Y-%m-%d') if pd.notna(x) else ''
+    )
+    display_df['Data_Movimentacao'] = display_df['Data_Movimentacao'].apply(
+        lambda x: x.strftime('%Y-%m-%d') if pd.notna(x) else ''
+    )
     display_df['Quantidade'] = display_df['Quantidade'].apply(format_number)
     display_df['Preco_Unitario'] = display_df['Preco_Unitario'].apply(format_currency)
     display_df['Volume_Financeiro'] = display_df['Volume_Financeiro'].apply(format_currency)
