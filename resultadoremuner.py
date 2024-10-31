@@ -19,22 +19,12 @@ def format_number(value):
     except:
         return "0"
 
-def get_default_dates(df):
+def get_default_dates():
     """Retorna datas padrão seguras para o date_input"""
     today = date.today()
-    try:
-        if df.empty:
-            return (today, today)
-        
-        min_date = df['Data_Movimentacao'].min()
-        max_date = df['Data_Movimentacao'].max()
-        
-        if pd.isna(min_date) or pd.isna(max_date):
-            return (today, today)
-            
-        return (min_date.date(), max_date.date())
-    except:
-        return (today, today)
+    start_date = date(2024, 1, 1)
+    end_date = date(2024, 12, 31)
+    return start_date, end_date
 
 # Estilo CSS personalizado
 st.markdown("""
@@ -103,23 +93,17 @@ def load_data():
     try:
         # Carregar dados do arquivo Excel
         df = pd.read_excel('remtotal2024_novo.xlsx')
-        required_columns = [
-            'Data_Referencia', 'Empresa', 'Tipo_Cargo', 'Tipo_Movimentacao',
-            'Tipo_Ativo', 'Caracteristica_Valor_Mobiliario', 'Data_Movimentacao',
-            'Quantidade', 'Preco_Unitario', 'Volume_Financeiro'
-        ]
         
-        # Verificar se todas as colunas necessárias existem
-        for col in required_columns:
-            if col not in df.columns:
-                df[col] = None
-                
-        return df[required_columns]
-    
+        # Converter colunas de data
+        if 'Data_Referencia' in df.columns:
+            df['Data_Referencia'] = pd.to_datetime(df['Data_Referencia'], errors='coerce')
+        if 'Data_Movimentacao' in df.columns:
+            df['Data_Movimentacao'] = pd.to_datetime(df['Data_Movimentacao'], errors='coerce')
+            
+        return df
     except Exception as e:
         st.error(f"Erro ao carregar dados: {str(e)}")
-        # Retornar DataFrame vazio com as colunas necessárias
-        return pd.DataFrame(columns=required_columns)
+        return pd.DataFrame()
 
 def main():
     # Título personalizado
@@ -132,12 +116,9 @@ def main():
     # Carregar dados
     df = load_data()
     
-    # Converter colunas de data com tratamento de erros
-    for col in ['Data_Referencia', 'Data_Movimentacao']:
-        try:
-            df[col] = pd.to_datetime(df[col], errors='coerce')
-        except:
-            df[col] = pd.NaT
+    if df.empty:
+        st.warning("Não foi possível carregar os dados.")
+        return
     
     # Linha de filtros
     col1, col2, col3 = st.columns(3)
@@ -152,12 +133,10 @@ def main():
         
     with col2:
         st.markdown('<div class="filter-container">', unsafe_allow_html=True)
-        default_start, default_end = get_default_dates(df)
+        default_start, default_end = get_default_dates()
         date_range = st.date_input(
             'Período',
-            value=(default_start, default_end),
-            min_value=default_start,
-            max_value=default_end
+            value=(default_start, default_end)
         )
         st.markdown('</div>', unsafe_allow_html=True)
         
@@ -169,7 +148,7 @@ def main():
         )
         st.markdown('</div>', unsafe_allow_html=True)
     
-    # Aplicar filtros com tratamento de erros
+    # Aplicar filtros
     filtered_df = df.copy()
     
     if empresas != 'Todas as empresas':
@@ -178,14 +157,18 @@ def main():
     if tipo_mov != 'Todos os tipos':
         filtered_df = filtered_df[filtered_df['Tipo_Movimentacao'] == tipo_mov]
     
-    # Filtro de data com tratamento de valores nulos
+    # Converter as datas do date_input para datetime
+    start_date = pd.to_datetime(date_range[0])
+    end_date = pd.to_datetime(date_range[1])
+    
+    # Aplicar filtro de data
     filtered_df = filtered_df[
         (filtered_df['Data_Movimentacao'].notna()) &
-        (filtered_df['Data_Movimentacao'].dt.date >= date_range[0]) &
-        (filtered_df['Data_Movimentacao'].dt.date <= date_range[1])
+        (filtered_df['Data_Movimentacao'] >= start_date) &
+        (filtered_df['Data_Movimentacao'] <= end_date)
     ]
     
-    # Formatar dados para exibição com tratamento de erros
+    # Formatar dados para exibição
     display_df = filtered_df.copy()
     display_df['Data_Referencia'] = display_df['Data_Referencia'].apply(
         lambda x: x.strftime('%Y-%m-%d') if pd.notna(x) else ''
