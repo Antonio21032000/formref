@@ -4,21 +4,6 @@ import pandas as pd
 # Configuração da página
 st.set_page_config(page_title="BR Insider Analysis", layout="wide", initial_sidebar_state="collapsed")
 
-# Funções de formatação
-def format_currency(value):
-    try:
-        return f"R$ {float(value):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    except:
-        return "R$ 0,00"
-
-def format_number(value):
-    try:
-        if pd.isna(value):
-            return "N/A"
-        return f"{float(value):.2f}%".replace(".", ",")
-    except:
-        return "N/A"
-
 # Estilo CSS personalizado
 st.markdown("""
     <style>
@@ -116,6 +101,11 @@ st.markdown("""
         div.row-widget.stSelectbox {
             padding: 0;
         }
+
+        .download-button {
+            text-align: right;
+            padding: 1rem;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -168,11 +158,35 @@ def main():
     # Criar um DataFrame para exibição mantendo os valores originais para ordenação
     display_df = pd.DataFrame({
         'Empresa': filtered_df['Nome_Companhia'],
-        'Remuneração Total': filtered_df['Total_Remuneracao'],
+        'Remuneração Total': filtered_df['Total_Remuneracao'].astype(float),
         '% Market Cap': filtered_df['% da Remuneração Total sobre o Market Cap'] * 100,
         '% EBITDA': filtered_df['% da Remuneração Total sobre o EBITDA'] * 100,
         '% Net Income': filtered_df['% da Remuneração Total sobre o Net Income LTM'] * 100
     })
+
+    # Botão de download
+    st.markdown('<div class="download-button">', unsafe_allow_html=True)
+    excel_data = display_df.copy()
+    excel_data['Remuneração Total'] = excel_data['Remuneração Total'].apply(lambda x: f"R$ {x:,.2f}")
+    excel_data['% Market Cap'] = excel_data['% Market Cap'].apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "None")
+    excel_data['% EBITDA'] = excel_data['% EBITDA'].apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "None")
+    excel_data['% Net Income'] = excel_data['% Net Income'].apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "None")
+    
+    def convert_df_to_excel():
+        output = pd.ExcelWriter('data.xlsx', engine='xlsxwriter')
+        excel_data.to_excel(output, index=False, sheet_name='Sheet1')
+        output.close()
+        with open('data.xlsx', 'rb') as f:
+            return f.read()
+
+    excel_file = convert_df_to_excel()
+    st.download_button(
+        label="📥 Baixar dados",
+        data=excel_file,
+        file_name="dados_empresas.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    st.markdown('</div>', unsafe_allow_html=True)
     
     # Exibir tabela com colunas ordenáveis
     st.dataframe(
@@ -184,7 +198,7 @@ def main():
             ),
             'Remuneração Total': st.column_config.NumberColumn(
                 'Remuneração Total',
-                format="R$ %,.2f"
+                format="R$ %,.2f",
             ),
             '% Market Cap': st.column_config.NumberColumn(
                 '% Market Cap',
