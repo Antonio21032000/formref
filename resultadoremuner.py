@@ -5,10 +5,10 @@ import pandas as pd
 st.set_page_config(layout="wide", page_title="Compensation Analysis")
 
 # Cores personalizadas
-BG_COLOR = '#102F46'  # Azul escuro para o fundo
-TITLE_BG_COLOR = '#DAA657'  # Dourado para o fundo do título
-TITLE_TEXT_COLOR = 'white'  # Branco para o texto do título
-TEXT_COLOR = '#333333'  # Cor principal do texto
+BG_COLOR = '#102F46'
+TITLE_BG_COLOR = '#DAA657'
+TITLE_TEXT_COLOR = 'white'
+TEXT_COLOR = '#333333'
 
 # CSS personalizado
 st.markdown(f"""
@@ -53,11 +53,6 @@ st.markdown(f"""
         text-align: center;
         margin: 0;
     }}
-    .stDateInput>div>div>input {{
-        color: {TEXT_COLOR};
-        background-color: white;
-        border-radius: 5px;
-    }}
     .stDataFrame {{
         background-color: white;
         border-radius: 10px;
@@ -88,6 +83,26 @@ st.markdown(f"""
     }}
     header {{
         display: none !important;
+    }}
+    .table-controls {{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 1rem 2.5%;
+        gap: 1rem;
+    }}
+    .expand-button {{
+        background-color: white;
+        color: {TITLE_BG_COLOR};
+        border: 1px solid {TITLE_BG_COLOR};
+        padding: 0.5rem 1rem;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }}
+    .expand-button:hover {{
+        background-color: {TITLE_BG_COLOR};
+        color: white;
     }}
     </style>
 """, unsafe_allow_html=True)
@@ -131,11 +146,9 @@ def main():
     # Criar DataFrame para exibição
     display_df = df.copy()
     
-    # Aplicar filtro se uma empresa específica for selecionada
     if empresas != 'Todas as empresas':
         display_df = display_df[display_df['Nome_Companhia'] == empresas]
 
-    # Preparar dados para exibição
     display_df = pd.DataFrame({
         'Empresa': display_df['Nome_Companhia'],
         'Remuneração Total': display_df['Total_Remuneracao'],
@@ -144,13 +157,25 @@ def main():
         '% Net Income': display_df['% da Remuneração Total sobre o Net Income LTM'] * 100
     })
 
-    # Botão de download
-    st.download_button(
-        label="📥 Baixar dados",
-        data=b"placeholder",
-        file_name="dados_empresas.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    )
+    # Controles da tabela
+    st.markdown('<div class="table-controls">', unsafe_allow_html=True)
+    col1, col2 = st.columns([1, 1])
+    
+    with col1:
+        st.download_button(
+            label="📥 Baixar dados",
+            data=b"placeholder",
+            file_name="dados_empresas.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+    
+    with col2:
+        expanded = st.checkbox("Expandir tabela", value=False)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Altura dinâmica da tabela
+    table_height = 1000 if expanded else 600
 
     # Exibir tabela
     st.dataframe(
@@ -176,7 +201,7 @@ def main():
                 format="%.2f%%"
             )
         },
-        height=600,
+        height=table_height,
         use_container_width=True
     )
 
