@@ -7,6 +7,14 @@ st.set_page_config(page_title="BR Insider Analysis", layout="wide", initial_side
 # Estilo CSS personalizado
 st.markdown("""
     <style>
+        header {display: none !important;}
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        
+        [data-testid="stToolbar"] {
+            display: none;
+        }
+        
         .title-container {
             background-color: #DEB887;
             padding: 20px;
@@ -34,10 +42,6 @@ st.markdown("""
         
         .stApp {
             background-color: #0A192F;
-        }
-
-        header[data-testid="stHeader"] {
-            display: none;
         }
         
         .dataframe {
@@ -86,8 +90,10 @@ st.markdown("""
         }
         
         .block-container {
-            padding-top: 2rem !important;
+            padding-top: 0rem !important;
             padding-bottom: 0rem !important;
+            padding-left: 0rem !important;
+            padding-right: 0rem !important;
             max-width: 100%;
         }
         
@@ -115,6 +121,14 @@ st.markdown("""
 
         iframe {
             background-color: white;
+        }
+
+        [data-testid="stHeader"] {
+            display: none;
+        }
+
+        .stDeployButton {
+            display: none;
         }
     </style>
 """, unsafe_allow_html=True)
