@@ -122,7 +122,7 @@ def load_data():
             '% da Remuneração Total sobre o Net Income LTM'
         ]
         
-        # Limpar e converter a coluna Total_Remuneracao
+        # Converter Total_Remuneracao para numérico sem símbolos
         df['Total_Remuneracao'] = df['Total_Remuneracao'].astype(str).str.replace(r'[^\d.]', '', regex=True)
         df['Total_Remuneracao'] = pd.to_numeric(df['Total_Remuneracao'], errors='coerce')
         
@@ -160,25 +160,22 @@ def main():
     if empresas != 'Todas as empresas':
         filtered_df = filtered_df[filtered_df['Nome_Companhia'] == empresas]
     
-    # Criar DataFrame para exibição com valores numéricos puros
+    # Criar DataFrame para exibição
     display_df = pd.DataFrame({
         'Empresa': filtered_df['Nome_Companhia'],
-        'Remuneração Total': filtered_df['Total_Remuneracao'].astype(float),
+        'Remuneração Total': pd.to_numeric(filtered_df['Total_Remuneracao'], errors='coerce'),
         '% Market Cap': filtered_df['% da Remuneração Total sobre o Market Cap'] * 100,
         '% EBITDA': filtered_df['% da Remuneração Total sobre o EBITDA'] * 100,
         '% Net Income': filtered_df['% da Remuneração Total sobre o Net Income LTM'] * 100
     })
 
-    # Remover linhas onde Remuneração Total é NaN
-    display_df = display_df.dropna(subset=['Remuneração Total'])
-
     # Botão de download
     st.markdown('<div class="download-button">', unsafe_allow_html=True)
     excel_data = display_df.copy()
-    excel_data['Remuneração Total'] = excel_data['Remuneração Total'].apply(lambda x: f"R$ {x:,.2f}")
-    excel_data['% Market Cap'] = excel_data['% Market Cap'].apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "None")
-    excel_data['% EBITDA'] = excel_data['% EBITDA'].apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "None")
-    excel_data['% Net Income'] = excel_data['% Net Income'].apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "None")
+    excel_data['Remuneração Total'] = excel_data['Remuneração Total'].apply(lambda x: f"R$ {x:,.2f}" if pd.notnull(x) else "N/A")
+    excel_data['% Market Cap'] = excel_data['% Market Cap'].apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "N/A")
+    excel_data['% EBITDA'] = excel_data['% EBITDA'].apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "N/A")
+    excel_data['% Net Income'] = excel_data['% Net Income'].apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "N/A")
     
     def convert_df_to_excel():
         output = pd.ExcelWriter('data.xlsx', engine='xlsxwriter')
@@ -195,21 +192,20 @@ def main():
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
     st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Exibir tabela com colunas ordenáveis
+
+    # Exibir tabela
     st.dataframe(
         data=display_df,
         hide_index=True,
         column_config={
-            'Empresa': st.column_config.TextColumn('Empresa'),
+            'Empresa': 'Empresa',
             'Remuneração Total': st.column_config.NumberColumn(
                 'Remuneração Total',
-                format="R$ %,.2f",
-                help='Valor total da remuneração'
+                format="R$ %,.2f"
             ),
             '% Market Cap': st.column_config.NumberColumn(
                 '% Market Cap',
-                format="%.2f%%",
+                format="%.2f%%"
             ),
             '% EBITDA': st.column_config.NumberColumn(
                 '% EBITDA',
@@ -220,7 +216,6 @@ def main():
                 format="%.2f%%"
             )
         },
-        column_order=['Empresa', 'Remuneração Total', '% Market Cap', '% EBITDA', '% Net Income'],
         height=800,
         use_container_width=True
     )
