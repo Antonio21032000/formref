@@ -109,14 +109,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-def format_number_br(value):
-    try:
-        if pd.isna(value):
-            return "N/A"
-        return f"{value:_.2f}".replace(".", ",").replace("_", ".")
-    except:
-        return value
-
 def load_data():
     try:
         df = pd.read_excel('remtotal2024_novo.xlsx')
@@ -128,9 +120,6 @@ def load_data():
             '% da Remuneração Total sobre o EBITDA',
             '% da Remuneração Total sobre o Net Income LTM'
         ]
-        
-        # Converter Total_Remuneracao para float
-        df['Total_Remuneracao'] = pd.to_numeric(df['Total_Remuneracao'].astype(str).str.replace(r'[^\d.]', '', regex=True), errors='coerce')
         
         return df[selected_columns]
     except Exception as e:
@@ -178,7 +167,6 @@ def main():
     # Botão de download
     st.markdown('<div class="download-button">', unsafe_allow_html=True)
     excel_data = display_df.copy()
-    excel_data['Remuneração Total'] = excel_data['Remuneração Total'].apply(format_number_br)
     excel_data['% Market Cap'] = excel_data['% Market Cap'].apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "N/A")
     excel_data['% EBITDA'] = excel_data['% EBITDA'].apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "N/A")
     excel_data['% Net Income'] = excel_data['% Net Income'].apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "N/A")
@@ -205,9 +193,9 @@ def main():
         hide_index=True,
         column_config={
             'Empresa': st.column_config.TextColumn('Empresa'),
-            'Remuneração Total': st.column_config.Column(
+            'Remuneração Total': st.column_config.TextColumn(
                 'Remuneração Total',
-                help='Remuneração total em reais'
+                help='Remuneração total em reais',
             ),
             '% Market Cap': st.column_config.NumberColumn(
                 '% Market Cap',
