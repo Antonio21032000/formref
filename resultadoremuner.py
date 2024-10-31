@@ -15,8 +15,7 @@ def format_number(value):
     try:
         if pd.isna(value):
             return "N/A"
-        # Multiplica por 100 para converter decimal em percentual
-        return f"{float(value) * 100:.2f}%".replace(".", ",")
+        return f"{float(value):.2f}%".replace(".", ",")
     except:
         return "N/A"
 
@@ -166,29 +165,36 @@ def main():
     if empresas != 'Todas as empresas':
         filtered_df = filtered_df[filtered_df['Nome_Companhia'] == empresas]
     
-    # Criar colunas formatadas para exibição mantendo os valores originais para ordenação
-    display_df = filtered_df.copy()
+    # Criar um DataFrame para exibição mantendo os valores originais para ordenação
+    display_df = pd.DataFrame({
+        'Empresa': filtered_df['Nome_Companhia'],
+        'Remuneração Total': filtered_df['Total_Remuneracao'],
+        '% Market Cap': filtered_df['% da Remuneração Total sobre o Market Cap'] * 100,
+        '% EBITDA': filtered_df['% da Remuneração Total sobre o EBITDA'] * 100,
+        '% Net Income': filtered_df['% da Remuneração Total sobre o Net Income LTM'] * 100
+    })
     
     # Exibir tabela com colunas ordenáveis
     st.dataframe(
         display_df,
         hide_index=True,
         column_config={
-            'Nome_Companhia': 'Empresa',
-            'Total_Remuneracao': st.column_config.NumberColumn(
-                'Remuneração Total',
-                format="R$ %,.2f",
-                help="Remuneração total em reais"
+            'Empresa': st.column_config.TextColumn(
+                'Empresa'
             ),
-            '% da Remuneração Total sobre o Market Cap': st.column_config.NumberColumn(
+            'Remuneração Total': st.column_config.NumberColumn(
+                'Remuneração Total',
+                format="R$ %,.2f"
+            ),
+            '% Market Cap': st.column_config.NumberColumn(
                 '% Market Cap',
                 format="%.2f%%"
             ),
-            '% da Remuneração Total sobre o EBITDA': st.column_config.NumberColumn(
+            '% EBITDA': st.column_config.NumberColumn(
                 '% EBITDA',
                 format="%.2f%%"
             ),
-            '% da Remuneração Total sobre o Net Income LTM': st.column_config.NumberColumn(
+            '% Net Income': st.column_config.NumberColumn(
                 '% Net Income',
                 format="%.2f%%"
             )
