@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime, date
 
 # Configuração da página
 st.set_page_config(page_title="BR Insider Analysis", layout="wide", initial_sidebar_state="collapsed")
@@ -20,12 +19,6 @@ def format_number(value):
     except:
         return "N/A"
 
-def get_default_dates():
-    """Retorna datas padrão seguras para o date_input"""
-    start_date = date(2024, 1, 1)
-    end_date = date(2024, 12, 31)
-    return start_date, end_date
-
 # Estilo CSS personalizado
 st.markdown("""
     <style>
@@ -33,8 +26,10 @@ st.markdown("""
             background-color: #DEB887;
             padding: 20px;
             border-radius: 10px;
-            margin-bottom: 20px;
+            margin: 0 auto 30px auto;
             text-align: center;
+            width: 90%;
+            max-width: 1200px;
         }
         .title-text {
             color: white;
@@ -43,20 +38,28 @@ st.markdown("""
             margin: 0;
         }
         
-        .dataframe {
-            font-size: 16px !important;
-            width: 100% !important;
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
         }
         
         .filter-container {
             background-color: white;
             padding: 15px;
             border-radius: 5px;
-            margin-bottom: 25px;
+            margin: 0 auto 25px auto;
+            width: 90%;
+            max-width: 1200px;
         }
         
         .stApp {
             background-color: #0A192F;
+        }
+        
+        .dataframe {
+            font-size: 16px !important;
+            width: 100% !important;
         }
         
         th {
@@ -88,16 +91,23 @@ st.markdown("""
             background-color: white;
         }
         
-        .stDateInput {
-            background-color: white;
-        }
-        
         [data-testid="stDataFrame"] {
-            width: 100%;
+            width: 90% !important;
+            margin: 0 auto;
         }
         
         div[data-testid="stVerticalBlock"] > div {
-            padding: 0 5%;
+            padding: 0;
+        }
+        
+        .block-container {
+            padding-top: 2rem !important;
+            padding-bottom: 0rem !important;
+            max-width: 100%;
+        }
+        
+        section[data-testid="stSidebar"] {
+            display: none;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -134,25 +144,13 @@ def main():
         st.warning("Não foi possível carregar os dados.")
         return
     
-    # Linha de filtros
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown('<div class="filter-container">', unsafe_allow_html=True)
-        empresas = st.selectbox(
-            'Empresas',
-            options=['Todas as empresas'] + sorted(df['Nome_Companhia'].dropna().unique().tolist())
-        )
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-    with col2:
-        st.markdown('<div class="filter-container">', unsafe_allow_html=True)
-        default_start, default_end = get_default_dates()
-        date_range = st.date_input(
-            'Período',
-            value=(default_start, default_end)
-        )
-        st.markdown('</div>', unsafe_allow_html=True)
+    # Filtro de empresas centralizado
+    st.markdown('<div class="filter-container">', unsafe_allow_html=True)
+    empresas = st.selectbox(
+        'Empresas',
+        options=['Todas as empresas'] + sorted(df['Nome_Companhia'].dropna().unique().tolist())
+    )
+    st.markdown('</div>', unsafe_allow_html=True)
     
     # Aplicar filtros
     filtered_df = df.copy()
