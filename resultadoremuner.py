@@ -4,17 +4,23 @@ import pandas as pd
 # Configuração da página
 st.set_page_config(page_title="BR Insider Analysis", layout="wide", initial_sidebar_state="collapsed")
 
-# Estilo CSS personalizado
-st.markdown("""
+# Remover a barra do menu e o rodapé
+st.markdown('''
     <style>
         header {display: none !important;}
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
+        .stDeployButton {display: none;}
+        div[data-testid="stToolbar"] {visibility: hidden;}
         
-        [data-testid="stToolbar"] {
-            display: none;
-        }
+        /* Remover espaços em branco */
+        .appview-container {margin: 0 !important; padding: 0 !important;}
+        .main > .block-container {padding: 0 !important; margin: 0 !important; max-width: 100% !important;}
+        [data-testid="stDecoration"] {display: none !important;}
+        .block-container {padding-top: 0rem !important;}
+        [data-testid="stAppViewContainer"] > section:first-child {padding: 0 !important;}
         
+        /* Estilo do título */
         .title-container {
             background-color: #DEB887;
             padding: 20px;
@@ -31,6 +37,7 @@ st.markdown("""
             margin: 0;
         }
         
+        /* Container do filtro */
         .filter-container {
             background-color: white;
             padding: 15px;
@@ -40,10 +47,12 @@ st.markdown("""
             max-width: 1800px;
         }
         
+        /* Cor de fundo principal */
         .stApp {
             background-color: #0A192F;
         }
         
+        /* Estilos da tabela */
         .dataframe {
             font-size: 16px !important;
             width: 100% !important;
@@ -75,6 +84,7 @@ st.markdown("""
             background-color: white !important;
         }
         
+        /* Estilos do select box */
         .stSelectbox {
             background-color: white;
         }
@@ -85,16 +95,9 @@ st.markdown("""
             background-color: white !important;
         }
         
+        /* Ajustes de layout */
         div[data-testid="stVerticalBlock"] > div {
             padding: 0;
-        }
-        
-        .block-container {
-            padding-top: 0rem !important;
-            padding-bottom: 0rem !important;
-            padding-left: 0rem !important;
-            padding-right: 0rem !important;
-            max-width: 100%;
         }
         
         section[data-testid="stSidebar"] {
@@ -102,8 +105,8 @@ st.markdown("""
         }
         
         [data-testid="stAppViewBlockContainer"] {
-            padding-left: 0;
-            padding-right: 0;
+            padding: 0 !important;
+            margin: 0 !important;
         }
         
         div.stMarkdown {
@@ -114,6 +117,7 @@ st.markdown("""
             padding: 0;
         }
 
+        /* Estilo do botão de download */
         .download-button {
             text-align: right;
             padding: 1rem;
@@ -122,16 +126,8 @@ st.markdown("""
         iframe {
             background-color: white;
         }
-
-        [data-testid="stHeader"] {
-            display: none;
-        }
-
-        .stDeployButton {
-            display: none;
-        }
     </style>
-""", unsafe_allow_html=True)
+''', unsafe_allow_html=True)
 
 def load_data():
     try:
