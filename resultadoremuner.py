@@ -4,6 +4,22 @@ import pandas as pd
 # Configuração da página
 st.set_page_config(page_title="BR Insider Analysis", layout="wide", initial_sidebar_state="collapsed")
 
+# Funções de formatação
+def format_currency(value):
+    try:
+        return f"R$ {float(value):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    except:
+        return "R$ 0,00"
+
+def format_number(value):
+    try:
+        if pd.isna(value):
+            return "N/A"
+        # Multiplica por 100 para converter decimal em percentual
+        return f"{float(value) * 100:.2f}%".replace(".", ",")
+    except:
+        return "N/A"
+
 # Estilo CSS personalizado
 st.markdown("""
     <style>
@@ -14,7 +30,7 @@ st.markdown("""
             margin: 0 auto 30px auto;
             text-align: center;
             width: 95%;
-            max-width: 1400px;
+            max-width: 1800px;
         }
         .title-text {
             color: white;
@@ -29,7 +45,7 @@ st.markdown("""
             border-radius: 5px;
             margin: 0 auto 25px auto;
             width: 95%;
-            max-width: 1400px;
+            max-width: 1800px;
         }
         
         .stApp {
@@ -72,8 +88,7 @@ st.markdown("""
         
         [data-testid="stDataFrame"] {
             width: 95% !important;
-            margin: 0 auto !important;
-            max-width: 1400px !important;
+            margin: 0 auto;
         }
         
         div[data-testid="stVerticalBlock"] > div {
@@ -82,11 +97,25 @@ st.markdown("""
         
         .block-container {
             padding-top: 2rem !important;
+            padding-bottom: 0rem !important;
             max-width: 100%;
         }
         
         section[data-testid="stSidebar"] {
             display: none;
+        }
+        
+        [data-testid="stAppViewBlockContainer"] {
+            padding-left: 0;
+            padding-right: 0;
+        }
+        
+        div.stMarkdown {
+            width: 100% !important;
+        }
+        
+        div.row-widget.stSelectbox {
+            padding: 0;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -103,13 +132,7 @@ def load_data():
             '% da Remuneração Total sobre o Net Income LTM'
         ]
         
-        df = df[selected_columns]
-        
-        # Converter colunas numéricas
-        for col in selected_columns[1:]:
-            df[col] = pd.to_numeric(df[col], errors='coerce')
-                
-        return df
+        return df[selected_columns]
     except Exception as e:
         st.error(f"Erro ao carregar dados: {str(e)}")
         return pd.DataFrame()
@@ -143,35 +166,26 @@ def main():
     if empresas != 'Todas as empresas':
         filtered_df = filtered_df[filtered_df['Nome_Companhia'] == empresas]
     
+    # Formatar as colunas
+    display_df = filtered_df.copy()
+    display_df['Total_Remuneracao'] = display_df['Total_Remuneracao'].apply(format_currency)
+    display_df['% da Remuneração Total sobre o Market Cap'] = display_df['% da Remuneração Total sobre o Market Cap'].apply(format_number)
+    display_df['% da Remuneração Total sobre o EBITDA'] = display_df['% da Remuneração Total sobre o EBITDA'].apply(format_number)
+    display_df['% da Remuneração Total sobre o Net Income LTM'] = display_df['% da Remuneração Total sobre o Net Income LTM'].apply(format_number)
+    
     # Exibir tabela
     st.dataframe(
-        filtered_df,
-        column_config={
-            'Nome_Companhia': st.column_config.Column('Empresa', width='medium'),
-            'Total_Remuneracao': st.column_config.NumberColumn(
-                'Remuneração Total',
-                format="R$ %.2f",
-                width='medium'
-            ),
-            '% da Remuneração Total sobre o Market Cap': st.column_config.NumberColumn(
-                '% Market Cap',
-                format="%.2f%%",
-                width='small'
-            ),
-            '% da Remuneração Total sobre o EBITDA': st.column_config.NumberColumn(
-                '% EBITDA',
-                format="%.2f%%",
-                width='small'
-            ),
-            '% da Remuneração Total sobre o Net Income LTM': st.column_config.NumberColumn(
-                '% Net Income',
-                format="%.2f%%",
-                width='small'
-            )
-        },
+        display_df,
         hide_index=True,
+        column_config={
+            'Nome_Companhia': 'Empresa',
+            'Total_Remuneracao': 'Remuneração Total',
+            '% da Remuneração Total sobre o Market Cap': '% Market Cap',
+            '% da Remuneração Total sobre o EBITDA': '% EBITDA',
+            '% da Remuneração Total sobre o Net Income LTM': '% Net Income'
+        },
         height=800,
-        use_container_width=False
+        use_container_width=True
     )
 
 if __name__ == "__main__":
