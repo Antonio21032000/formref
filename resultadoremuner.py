@@ -94,12 +94,21 @@ def load_data():
         # Carregar dados do arquivo Excel
         df = pd.read_excel('remtotal2024_novo.xlsx')
         
-        # Converter colunas de data
-        if 'Data_Referencia' in df.columns:
-            df['Data_Referencia'] = pd.to_datetime(df['Data_Referencia'], errors='coerce')
-        if 'Data_Movimentacao' in df.columns:
-            df['Data_Movimentacao'] = pd.to_datetime(df['Data_Movimentacao'], errors='coerce')
-            
+        # Mostra as colunas disponíveis para debug
+        st.write("Colunas disponíveis:", df.columns.tolist())
+        
+        # Mapeia os nomes das colunas
+        column_mapping = {
+            'Nome_Companhia': 'Empresa',
+            'Total_Remuneracao': 'Remuneração Total',
+            '% da Remuneração Total sobre o Market Cap': '% Market Cap',
+            '% da Remuneracao sobre o EBITDA': '% EBITDA',
+            '% da Remuneracao sobre o Net Income LTM': '% Net Income'
+        }
+        
+        # Renomeia as colunas se elas existirem
+        df = df.rename(columns={k: v for k, v in column_mapping.items() if k in df.columns})
+        
         return df
     except Exception as e:
         st.error(f"Erro ao carregar dados: {str(e)}")
@@ -123,11 +132,18 @@ def main():
     # Linha de filtros
     col1, col2, col3 = st.columns(3)
     
+    # Lista de empresas
+    empresas_list = ['Todas as empresas']
+    if 'Nome_Companhia' in df.columns:
+        empresas_list.extend(sorted(df['Nome_Companhia'].dropna().unique().tolist()))
+    elif 'Empresa' in df.columns:
+        empresas_list.extend(sorted(df['Empresa'].dropna().unique().tolist()))
+    
     with col1:
         st.markdown('<div class="filter-container">', unsafe_allow_html=True)
         empresas = st.selectbox(
             'Empresas',
-            options=['Todas as empresas'] + sorted(df['Empresa'].dropna().unique().tolist())
+            options=empresas_list
         )
         st.markdown('</div>', unsafe_allow_html=True)
         
@@ -139,62 +155,30 @@ def main():
             value=(default_start, default_end)
         )
         st.markdown('</div>', unsafe_allow_html=True)
-        
-    with col3:
-        st.markdown('<div class="filter-container">', unsafe_allow_html=True)
-        tipo_mov = st.selectbox(
-            'Tipo de Movimentação',
-            options=['Todos os tipos'] + sorted(df['Tipo_Movimentacao'].dropna().unique().tolist())
-        )
-        st.markdown('</div>', unsafe_allow_html=True)
     
     # Aplicar filtros
     filtered_df = df.copy()
     
     if empresas != 'Todas as empresas':
-        filtered_df = filtered_df[filtered_df['Empresa'] == empresas]
-    
-    if tipo_mov != 'Todos os tipos':
-        filtered_df = filtered_df[filtered_df['Tipo_Movimentacao'] == tipo_mov]
+        if 'Nome_Companhia' in filtered_df.columns:
+            filtered_df = filtered_df[filtered_df['Nome_Companhia'] == empresas]
+        elif 'Empresa' in filtered_df.columns:
+            filtered_df = filtered_df[filtered_df['Empresa'] == empresas]
     
     # Converter as datas do date_input para datetime
     start_date = pd.to_datetime(date_range[0])
     end_date = pd.to_datetime(date_range[1])
     
-    # Aplicar filtro de data
-    filtered_df = filtered_df[
-        (filtered_df['Data_Movimentacao'].notna()) &
-        (filtered_df['Data_Movimentacao'] >= start_date) &
-        (filtered_df['Data_Movimentacao'] <= end_date)
-    ]
-    
-    # Formatar dados para exibição
-    display_df = filtered_df.copy()
-    display_df['Data_Referencia'] = display_df['Data_Referencia'].apply(
-        lambda x: x.strftime('%Y-%m-%d') if pd.notna(x) else ''
-    )
-    display_df['Data_Movimentacao'] = display_df['Data_Movimentacao'].apply(
-        lambda x: x.strftime('%Y-%m-%d') if pd.notna(x) else ''
-    )
-    display_df['Quantidade'] = display_df['Quantidade'].apply(format_number)
-    display_df['Preco_Unitario'] = display_df['Preco_Unitario'].apply(format_currency)
-    display_df['Volume_Financeiro'] = display_df['Volume_Financeiro'].apply(format_currency)
-    
     # Exibir tabela com estilo
     st.dataframe(
-        display_df,
+        filtered_df,
         hide_index=True,
         column_config={
-            'Data_Referencia': 'Data Referência',
-            'Empresa': 'Empresa',
-            'Tipo_Cargo': 'Tipo Cargo',
-            'Tipo_Movimentacao': 'Tipo Movimentação',
-            'Tipo_Ativo': 'Tipo Ativo',
-            'Caracteristica_Valor_Mobiliario': 'Característica Valor Mobiliário',
-            'Data_Movimentacao': 'Data Movimentação',
-            'Quantidade': 'Quantidade',
-            'Preco_Unitario': 'Preço Unitário',
-            'Volume_Financeiro': 'Volume Financeiro (R$)'
+            'Nome_Companhia': 'Empresa',
+            'Total_Remuneracao': 'Remuneração Total',
+            '% da Remuneração Total sobre o Market Cap': '% Market Cap',
+            '% da Remuneracao sobre o EBITDA': '% EBITDA',
+            '% da Remuneracao sobre o Net Income LTM': '% Net Income'
         },
         height=600
     )
