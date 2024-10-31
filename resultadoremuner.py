@@ -15,8 +15,7 @@ def format_number(value):
     try:
         if pd.isna(value):
             return "N/A"
-        # Multiplica por 100 para converter decimal em percentual
-        return f"{float(value) * 100:.2f}%".replace(".", ",")
+        return f"{float(value):.2f}%".replace(".", ",")
     except:
         return "N/A"
 
@@ -29,8 +28,7 @@ st.markdown("""
             border-radius: 10px;
             margin: 0 auto 30px auto;
             text-align: center;
-            width: 95%;
-            max-width: 1800px;
+            width: 100%;
         }
         .title-text {
             color: white;
@@ -44,8 +42,7 @@ st.markdown("""
             padding: 15px;
             border-radius: 5px;
             margin: 0 auto 25px auto;
-            width: 95%;
-            max-width: 1800px;
+            width: 98%;
         }
         
         .stApp {
@@ -87,7 +84,7 @@ st.markdown("""
         }
         
         [data-testid="stDataFrame"] {
-            width: 95% !important;
+            width: 98% !important;
             margin: 0 auto;
         }
         
@@ -96,8 +93,10 @@ st.markdown("""
         }
         
         .block-container {
-            padding-top: 2rem !important;
-            padding-bottom: 0rem !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
             max-width: 100%;
         }
         
@@ -106,8 +105,9 @@ st.markdown("""
         }
         
         [data-testid="stAppViewBlockContainer"] {
-            padding-left: 0;
-            padding-right: 0;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            padding-top: 0 !important;
         }
         
         div.stMarkdown {
@@ -116,6 +116,10 @@ st.markdown("""
         
         div.row-widget.stSelectbox {
             padding: 0;
+        }
+        
+        header {
+            display: none !important;
         }
     </style>
 """, unsafe_allow_html=True)
