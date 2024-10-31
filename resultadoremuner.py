@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from datetime import datetime, timedelta
 
 # Configuração inicial
 st.set_page_config(
@@ -8,53 +9,24 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# CSS simplificado focando na remoção da barra branca
+# CSS para o novo layout
 st.markdown("""
 <style>
-[data-testid="stHeader"] {
-    display: none;
-}
-
-.stDeployButton {
-    display: none;
-}
-
-.block-container {
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-}
-
-[data-testid="stToolbar"] {
-    display: none;
-}
-
-.stApp > header {
-    display: none;
-}
-
+header {display: none !important;}
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+.block-container {padding: 0 !important;}
 .stApp {
-    margin-top: -4rem;
     background-color: #0A192F;
-}
-
-div[data-testid="stDecoration"] {
-    display: none;
-}
-
-section[data-testid="stSidebar"] {
-    margin-top: -4rem;
 }
 
 .title-container {
     background-color: #DEB887;
     padding: 20px;
     border-radius: 10px;
-    margin-bottom: 20px;
+    margin: 0 auto 20px auto;
     text-align: center;
-    width: 95%;
-    max-width: 1800px;
-    margin-left: auto;
-    margin-right: auto;
+    width: 100%;
 }
 
 .title-text {
@@ -64,26 +36,40 @@ section[data-testid="stSidebar"] {
     margin: 0;
 }
 
-.filter-container {
-    background-color: white;
-    padding: 15px;
-    border-radius: 5px;
-    margin: 20px auto;
-    width: 95%;
-    max-width: 1800px;
+.filters-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 20px;
+    margin-bottom: 20px;
 }
 
-.download-button {
-    text-align: right;
+.filter-column {
+    background-color: white;
+    padding: 10px;
+    border-radius: 5px;
+    flex: 1;
+}
+
+.stSelectbox {
+    width: 100%;
+}
+
+[data-testid="stDataFrame"] {
+    width: 95% !important;
+    margin: 0 auto;
+    background-color: white !important;
+    border-radius: 5px;
+}
+
+div[data-testid="stDataFrameResizable"] {
     padding: 1rem;
 }
 
-section.main > div:has(~ footer ) {
-    padding-top: 0;
-}
-
-footer {
-    display: none;
+.download-button {
+    padding: 1rem;
+    text-align: left;
+    margin-left: 2.5%;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -91,7 +77,6 @@ footer {
 def load_data():
     try:
         df = pd.read_excel('remtotal2024_novo.xlsx')
-        
         selected_columns = [
             'Nome_Companhia',
             'Total_Remuneracao',
@@ -99,93 +84,96 @@ def load_data():
             '% da Remuneração Total sobre o EBITDA',
             '% da Remuneração Total sobre o Net Income LTM'
         ]
-        
         df['Total_Remuneracao'] = pd.to_numeric(df['Total_Remuneracao'], errors='coerce')
-        
         return df[selected_columns]
     except Exception as e:
         st.error(f"Erro ao carregar dados: {str(e)}")
         return pd.DataFrame()
 
 def main():
-    # Título personalizado
+    # Título
     st.markdown("""
         <div class="title-container">
             <h1 class="title-text">BR Insider Analysis</h1>
         </div>
     """, unsafe_allow_html=True)
     
-    df = load_data()
+    # Linha de filtros com 3 colunas
+    st.markdown('<div class="filters-row">', unsafe_allow_html=True)
     
-    if df.empty:
-        st.warning("Não foi possível carregar os dados.")
-        return
+    col1, col2, col3 = st.columns(3)
     
-    # Filtro de empresas
-    st.markdown('<div class="filter-container">', unsafe_allow_html=True)
-    empresas = st.selectbox(
-        'Empresas',
-        options=['Todas as empresas'] + sorted(df['Nome_Companhia'].dropna().unique().tolist())
-    )
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    filtered_df = df.copy()
-    if empresas != 'Todas as empresas':
-        filtered_df = filtered_df[filtered_df['Nome_Companhia'] == empresas]
-    
-    display_df = pd.DataFrame({
-        'Empresa': filtered_df['Nome_Companhia'],
-        'Remuneração Total': filtered_df['Total_Remuneracao'],
-        '% Market Cap': filtered_df['% da Remuneração Total sobre o Market Cap'] * 100,
-        '% EBITDA': filtered_df['% da Remuneração Total sobre o EBITDA'] * 100,
-        '% Net Income': filtered_df['% da Remuneração Total sobre o Net Income LTM'] * 100
-    })
+    with col1:
+        st.markdown('<div class="filter-column">', unsafe_allow_html=True)
+        empresas = st.selectbox(
+            'Empresas',
+            options=['Choose an option'] + ['Todas as empresas']
+        )
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+    with col2:
+        st.markdown('<div class="filter-column">', unsafe_allow_html=True)
+        data_range = st.text_input(
+            'Período',
+            value='2024/01/01 - 2024/09/01'
+        )
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+    with col3:
+        st.markdown('<div class="filter-column">', unsafe_allow_html=True)
+        tipo_mov = st.selectbox(
+            'Tipo de Movimentação',
+            options=['Choose an option']
+        )
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # Botão de download
     st.markdown('<div class="download-button">', unsafe_allow_html=True)
-    excel_data = display_df.copy()
-    excel_data['% Market Cap'] = excel_data['% Market Cap'].apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "None")
-    excel_data['% EBITDA'] = excel_data['% EBITDA'].apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "None")
-    excel_data['% Net Income'] = excel_data['% Net Income'].apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "None")
-    
-    def convert_df_to_excel():
-        output = pd.ExcelWriter('data.xlsx', engine='xlsxwriter')
-        excel_data.to_excel(output, index=False, sheet_name='Sheet1')
-        output.close()
-        with open('data.xlsx', 'rb') as f:
-            return f.read()
-
-    excel_file = convert_df_to_excel()
     st.download_button(
         label="📥 Baixar dados",
-        data=excel_file,
+        data=b"placeholder",
         file_name="dados_empresas.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
     st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Dados da tabela
+    df = pd.DataFrame({
+        'Data_Referencia': ['2024-07-01 00:00:00'] * 5,
+        'Empresa': ['CIA SANEAMENTO BASICO EST SAO PAULO', 'AMERICANAS S.A.', 'CIELO S.A.', 'MARFRIG GLOBAL FOODS S.A.', 'CENCOSUD BRASIL COMERCIAL S.A.'],
+        'Tipo_Cargo': ['Controlador ou Vinculado'] * 5,
+        'Tipo_Movimentacao': ['Venda à vista', 'Subscrição', 'Outras Entradas', 'Outras Entradas', 'Outras Entradas'],
+        'Tipo_Ativo': ['Ações'] * 5,
+        'Caracteristica_Valor_Mobiliario': ['ON'] * 5,
+        'Data_Movimentacao': ['2024-07-22', '2024-07-25', '2024-08-14', '2024-03-10', '2024-01-30'],
+        'Quantidade': [220470000, 5404616788, 525755748, 230095577, 1640826000],
+        'Preco_Unitario': [67.00, 1.30, 5.82, 9.71, 1.00],
+        'Volume Financeiro (R$)': [14771490000.00, 7026001824.40, 3059898453.36, 2234228052.67, 1640826000.00]
+    })
 
     # Exibir tabela
     st.dataframe(
-        display_df,
+        df,
         hide_index=True,
         column_config={
+            'Data_Referencia': 'Data_Referencia',
             'Empresa': 'Empresa',
-            'Remuneração Total': st.column_config.NumberColumn(
-                'Remuneração Total',
-                help='Remuneração total em reais',
+            'Tipo_Cargo': 'Tipo_Cargo',
+            'Tipo_Movimentacao': 'Tipo_Movimentacao',
+            'Tipo_Ativo': 'Tipo_Ativo',
+            'Caracteristica_Valor_Mobiliario': 'Caracteristica_Valor_Mobiliario',
+            'Data_Movimentacao': 'Data_Movimentacao',
+            'Quantidade': st.column_config.NumberColumn(
+                'Quantidade',
                 format="%d"
             ),
-            '% Market Cap': st.column_config.NumberColumn(
-                '% Market Cap',
-                format="%.2f%%"
+            'Preco_Unitario': st.column_config.NumberColumn(
+                'Preço_Unitario',
+                format="R$ %.2f"
             ),
-            '% EBITDA': st.column_config.NumberColumn(
-                '% EBITDA',
-                format="%.2f%%"
-            ),
-            '% Net Income': st.column_config.NumberColumn(
-                '% Net Income',
-                format="%.2f%%"
+            'Volume Financeiro (R$)': st.column_config.NumberColumn(
+                'Volume Financeiro (R$)',
+                format="R$ %.2f"
             )
         },
         height=800,
