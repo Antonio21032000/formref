@@ -1,26 +1,30 @@
 import streamlit as st
 import pandas as pd
 
-# Configuração inicial sem decorações
+# Configuração inicial
 st.set_page_config(
     page_title="BR Insider Analysis",
     layout="wide",
-    initial_sidebar_state="collapsed",
-    menu_items=None
+    initial_sidebar_state="collapsed"
 )
 
-# CSS limpo e direto
+# CSS simplificado focando na remoção da barra branca
 st.markdown("""
 <style>
-section.main > div:has(~ footer ) {
-    padding-top: 0;
-}
-
-header[data-testid="stHeader"] {
+[data-testid="stHeader"] {
     display: none;
 }
 
-footer {
+.stDeployButton {
+    display: none;
+}
+
+.block-container {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+[data-testid="stToolbar"] {
     display: none;
 }
 
@@ -29,19 +33,28 @@ footer {
 }
 
 .stApp {
-    margin-top: 0;
-    padding-top: 0;
+    margin-top: -4rem;
     background-color: #0A192F;
+}
+
+div[data-testid="stDecoration"] {
+    display: none;
+}
+
+section[data-testid="stSidebar"] {
+    margin-top: -4rem;
 }
 
 .title-container {
     background-color: #DEB887;
     padding: 20px;
     border-radius: 10px;
-    margin: 0 auto 30px auto;
+    margin-bottom: 20px;
     text-align: center;
     width: 95%;
     max-width: 1800px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .title-text {
@@ -55,7 +68,7 @@ footer {
     background-color: white;
     padding: 15px;
     border-radius: 5px;
-    margin: 0 auto 25px auto;
+    margin: 20px auto;
     width: 95%;
     max-width: 1800px;
 }
@@ -63,6 +76,14 @@ footer {
 .download-button {
     text-align: right;
     padding: 1rem;
+}
+
+section.main > div:has(~ footer ) {
+    padding-top: 0;
+}
+
+footer {
+    display: none;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -87,6 +108,7 @@ def load_data():
         return pd.DataFrame()
 
 def main():
+    # Título personalizado
     st.markdown("""
         <div class="title-container">
             <h1 class="title-text">BR Insider Analysis</h1>
@@ -99,6 +121,7 @@ def main():
         st.warning("Não foi possível carregar os dados.")
         return
     
+    # Filtro de empresas
     st.markdown('<div class="filter-container">', unsafe_allow_html=True)
     empresas = st.selectbox(
         'Empresas',
@@ -118,6 +141,7 @@ def main():
         '% Net Income': filtered_df['% da Remuneração Total sobre o Net Income LTM'] * 100
     })
 
+    # Botão de download
     st.markdown('<div class="download-button">', unsafe_allow_html=True)
     excel_data = display_df.copy()
     excel_data['% Market Cap'] = excel_data['% Market Cap'].apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "None")
@@ -140,6 +164,7 @@ def main():
     )
     st.markdown('</div>', unsafe_allow_html=True)
 
+    # Exibir tabela
     st.dataframe(
         display_df,
         hide_index=True,
