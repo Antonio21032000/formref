@@ -1,35 +1,28 @@
+```python
 import streamlit as st
 import pandas as pd
 
 # Configuração da página
 st.set_page_config(page_title="BR Insider Analysis", layout="wide", initial_sidebar_state="collapsed")
 
-# Funções de formatação
-def format_currency(value):
-    try:
-        return f"R$ {float(value):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    except:
-        return "R$ 0,00"
-
-def format_number(value):
-    try:
-        if pd.isna(value):
-            return "None"
-        return f"{float(value):.2f}%".replace(".", ",")
-    except:
-        return "None"
-
-# Estilo CSS personalizado
+# Estilo CSS personalizado com larguras e margens controladas
 st.markdown("""
     <style>
+        /* Container principal */
+        .main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0;
+        }
+        
+        /* Título */
         .title-container {
             background-color: #DEB887;
             padding: 20px;
             border-radius: 10px;
-            margin: 0 auto 30px auto;
+            margin: 20px auto;
             text-align: center;
-            width: 80%;
-            max-width: 1200px;
+            width: 1000px;
         }
         .title-text {
             color: white;
@@ -38,21 +31,29 @@ st.markdown("""
             margin: 0;
         }
         
+        /* Filtro */
         .filter-container {
             background-color: white;
             padding: 15px;
             border-radius: 5px;
-            margin: 0 auto 25px auto;
-            width: 80%;
-            max-width: 1200px;
+            margin: 20px auto;
+            width: 1000px;
         }
         
+        /* Cores e estilos gerais */
         .stApp {
             background-color: #0A192F;
         }
         
+        /* Tabela */
+        [data-testid="stDataFrame"] {
+            width: 1000px !important;
+            margin: 0 auto !important;
+        }
+        
         .dataframe {
             font-size: 14px !important;
+            width: 100% !important;
         }
         
         th {
@@ -81,42 +82,28 @@ st.markdown("""
             background-color: white;
         }
         
-        .stSelectbox {
-            background-color: white;
-        }
-        
-        [data-testid="stDataFrame"] {
-            width: 80% !important;
-            margin: 0 auto !important;
-            max-width: 1200px !important;
-        }
-        
-        div[data-testid="stVerticalBlock"] > div {
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        
-        .block-container {
-            padding: 3rem 1rem !important;
-            max-width: 100% !important;
-        }
-        
+        /* Ajustes de layout */
         section[data-testid="stSidebar"] {
             display: none;
         }
         
+        .block-container {
+            padding-top: 2rem !important;
+            padding-right: 0 !important;
+            padding-left: 0 !important;
+            max-width: 100%;
+        }
+        
+        div[data-testid="stVerticalBlock"] > div {
+            padding: 0;
+        }
+        
         .stDataFrame div[data-testid="stDataFrameContainer"] {
-            padding: 0px !important;
+            padding: 0 !important;
         }
         
-        iframe {
-            border: none !important;
-        }
-        
-        [data-testid="stWidgetLabel"] {
-            font-size: 14px !important;
+        [data-testid="stAppViewContainer"] > div {
+            padding: 0;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -146,6 +133,9 @@ def load_data():
         return pd.DataFrame()
 
 def main():
+    # Container principal
+    st.markdown('<div class="main">', unsafe_allow_html=True)
+    
     # Título personalizado
     st.markdown("""
         <div class="title-container">
@@ -200,6 +190,9 @@ def main():
         height=600,
         use_container_width=False
     )
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
+```
