@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 
 # Configuração da página
 st.set_page_config(page_title="BR Insider Analysis", layout="wide", initial_sidebar_state="collapsed")
@@ -121,7 +122,8 @@ def load_data():
             '% da Remuneração Total sobre o Net Income LTM'
         ]
         
-        # Converter Total_Remuneracao para numérico imediatamente após carregar
+        # Limpar e converter a coluna Total_Remuneracao
+        df['Total_Remuneracao'] = df['Total_Remuneracao'].astype(str).str.replace(r'[^\d.]', '', regex=True)
         df['Total_Remuneracao'] = pd.to_numeric(df['Total_Remuneracao'], errors='coerce')
         
         return df[selected_columns]
@@ -161,11 +163,14 @@ def main():
     # Criar DataFrame para exibição com valores numéricos puros
     display_df = pd.DataFrame({
         'Empresa': filtered_df['Nome_Companhia'],
-        'Remuneração Total': pd.to_numeric(filtered_df['Total_Remuneracao'], errors='coerce'),
+        'Remuneração Total': filtered_df['Total_Remuneracao'].astype(float),
         '% Market Cap': filtered_df['% da Remuneração Total sobre o Market Cap'] * 100,
         '% EBITDA': filtered_df['% da Remuneração Total sobre o EBITDA'] * 100,
         '% Net Income': filtered_df['% da Remuneração Total sobre o Net Income LTM'] * 100
     })
+
+    # Remover linhas onde Remuneração Total é NaN
+    display_df = display_df.dropna(subset=['Remuneração Total'])
 
     # Botão de download
     st.markdown('<div class="download-button">', unsafe_allow_html=True)
@@ -196,15 +201,15 @@ def main():
         data=display_df,
         hide_index=True,
         column_config={
-            'Empresa': 'Empresa',
+            'Empresa': st.column_config.TextColumn('Empresa'),
             'Remuneração Total': st.column_config.NumberColumn(
                 'Remuneração Total',
-                help='Valor total da remuneração',
-                format="R$ %,.2f"
+                format="R$ %,.2f",
+                help='Valor total da remuneração'
             ),
             '% Market Cap': st.column_config.NumberColumn(
                 '% Market Cap',
-                format="%.2f%%"
+                format="%.2f%%",
             ),
             '% EBITDA': st.column_config.NumberColumn(
                 '% EBITDA',
@@ -215,6 +220,7 @@ def main():
                 format="%.2f%%"
             )
         },
+        column_order=['Empresa', 'Remuneração Total', '% Market Cap', '% EBITDA', '% Net Income'],
         height=800,
         use_container_width=True
     )
