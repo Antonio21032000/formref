@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime, date
-import numpy as np
 
 # Configuração da página
 st.set_page_config(page_title="BR Insider Analysis", layout="wide")
@@ -28,7 +27,6 @@ def get_default_dates():
 # Estilo CSS personalizado
 st.markdown("""
     <style>
-        /* Título principal */
         .title-container {
             background-color: #DEB887;
             padding: 20px;
@@ -43,12 +41,10 @@ st.markdown("""
             margin: 0;
         }
         
-        /* Estilização da tabela */
         .dataframe {
             font-size: 14px !important;
         }
         
-        /* Containers dos filtros */
         .filter-container {
             background-color: white;
             padding: 10px;
@@ -56,18 +52,15 @@ st.markdown("""
             margin-bottom: 15px;
         }
         
-        /* Estilo do fundo da página */
         .stApp {
             background-color: #0A192F;
         }
         
-        /* Estilização dos headers da tabela */
         th {
             background-color: #f0f2f6;
             font-weight: bold !important;
         }
         
-        /* Alternar cores das linhas */
         tr:nth-child(even) {
             background-color: #f9f9f9;
         }
@@ -76,12 +69,10 @@ st.markdown("""
             background-color: white;
         }
         
-        /* Ajustes nos selects */
         .stSelectbox {
             background-color: white;
         }
         
-        /* Ajustes na data */
         .stDateInput {
             background-color: white;
         }
@@ -102,6 +93,12 @@ def load_data():
             '% da Remuneração Total sobre o Net Income LTM'
         ]
         
+        # Verificar se todas as colunas existem no DataFrame
+        for col in selected_columns:
+            if col not in df.columns:
+                st.error(f"Coluna {col} não encontrada no arquivo")
+                return pd.DataFrame()
+                
         return df[selected_columns]
     except Exception as e:
         st.error(f"Erro ao carregar dados: {str(e)}")
@@ -125,15 +122,11 @@ def main():
     # Linha de filtros
     col1, col2 = st.columns(2)
     
-    # Lista de empresas
-    empresas_list = ['Todas as empresas']
-    empresas_list.extend(sorted(df['Nome_Companhia'].dropna().unique().tolist()))
-    
     with col1:
         st.markdown('<div class="filter-container">', unsafe_allow_html=True)
         empresas = st.selectbox(
             'Empresas',
-            options=empresas_list
+            options=['Todas as empresas'] + sorted(df['Nome_Companhia'].dropna().unique().tolist())
         )
         st.markdown('</div>', unsafe_allow_html=True)
         
@@ -152,14 +145,14 @@ def main():
     if empresas != 'Todas as empresas':
         filtered_df = filtered_df[filtered_df['Nome_Companhia'] == empresas]
     
-    # Formatar as colunas numéricas
+    # Formatar as colunas
     display_df = filtered_df.copy()
     display_df['Total_Remuneracao'] = display_df['Total_Remuneracao'].apply(format_currency)
     display_df['% da Remuneração Total sobre o Market Cap'] = display_df['% da Remuneração Total sobre o Market Cap'].apply(format_number)
     display_df['% da Remuneração Total sobre o EBITDA'] = display_df['% da Remuneração Total sobre o EBITDA'].apply(format_number)
     display_df['% da Remuneração Total sobre o Net Income LTM'] = display_df['% da Remuneração Total sobre o Net Income LTM'].apply(format_number)
     
-    # Exibir tabela com estilo
+    # Exibir tabela
     st.dataframe(
         display_df,
         hide_index=True,
