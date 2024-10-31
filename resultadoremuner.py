@@ -15,7 +15,8 @@ def format_number(value):
     try:
         if pd.isna(value):
             return "N/A"
-        return f"{float(value):,.2f}%".replace(",", "X").replace(".", ",").replace("X", ".")
+        # Multiplica por 100 para converter decimal em percentual
+        return f"{float(value) * 100:.2f}%".replace(".", ",")
     except:
         return "N/A"
 
@@ -28,8 +29,8 @@ st.markdown("""
             border-radius: 10px;
             margin: 0 auto 30px auto;
             text-align: center;
-            width: 90%;
-            max-width: 1200px;
+            width: 95%;
+            max-width: 1800px;
         }
         .title-text {
             color: white;
@@ -38,19 +39,13 @@ st.markdown("""
             margin: 0;
         }
         
-        .main-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-        
         .filter-container {
             background-color: white;
             padding: 15px;
             border-radius: 5px;
             margin: 0 auto 25px auto;
-            width: 90%;
-            max-width: 1200px;
+            width: 95%;
+            max-width: 1800px;
         }
         
         .stApp {
@@ -92,7 +87,7 @@ st.markdown("""
         }
         
         [data-testid="stDataFrame"] {
-            width: 90% !important;
+            width: 95% !important;
             margin: 0 auto;
         }
         
@@ -108,6 +103,19 @@ st.markdown("""
         
         section[data-testid="stSidebar"] {
             display: none;
+        }
+        
+        [data-testid="stAppViewBlockContainer"] {
+            padding-left: 0;
+            padding-right: 0;
+        }
+        
+        div.stMarkdown {
+            width: 100% !important;
+        }
+        
+        div.row-widget.stSelectbox {
+            padding: 0;
         }
     </style>
 """, unsafe_allow_html=True)
