@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 # Configuração da página
-st.set_page_config(layout="wide", page_title="BR Insider Analysis")
+st.set_page_config(layout="wide", page_title="Compensation Analysis")
 
 # Cores personalizadas
 BG_COLOR = '#102F46'  # Azul escuro para o fundo
@@ -113,29 +113,8 @@ def load_data():
 
 def main():
     # Título
-    st.markdown('<div class="title-container"><h1>BR Insider Analysis</h1></div>', unsafe_allow_html=True)
+    st.markdown('<div class="title-container"><h1>Compensation Analysis</h1></div>', unsafe_allow_html=True)
     
-    # Filtros em 3 colunas
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        empresas = st.selectbox(
-            'Empresas',
-            options=['Choose an option'] + ['Todas as empresas']
-        )
-        
-    with col2:
-        data_range = st.text_input(
-            'Período',
-            value='2024/01/01 - 2024/09/01'
-        )
-        
-    with col3:
-        tipo_mov = st.selectbox(
-            'Tipo de Movimentação',
-            options=['Choose an option']
-        )
-
     # Carregar dados
     df = load_data()
     
@@ -143,13 +122,26 @@ def main():
         st.warning("Não foi possível carregar os dados.")
         return
     
+    # Filtro único de empresas
+    empresas = st.selectbox(
+        'Empresas',
+        options=['Todas as empresas'] + sorted(df['Nome_Companhia'].unique().tolist())
+    )
+
     # Criar DataFrame para exibição
+    display_df = df.copy()
+    
+    # Aplicar filtro se uma empresa específica for selecionada
+    if empresas != 'Todas as empresas':
+        display_df = display_df[display_df['Nome_Companhia'] == empresas]
+
+    # Preparar dados para exibição
     display_df = pd.DataFrame({
-        'Empresa': df['Nome_Companhia'],
-        'Remuneração Total': df['Total_Remuneracao'],
-        '% Market Cap': df['% da Remuneração Total sobre o Market Cap'] * 100,
-        '% EBITDA': df['% da Remuneração Total sobre o EBITDA'] * 100,
-        '% Net Income': df['% da Remuneração Total sobre o Net Income LTM'] * 100
+        'Empresa': display_df['Nome_Companhia'],
+        'Remuneração Total': display_df['Total_Remuneracao'],
+        '% Market Cap': display_df['% da Remuneração Total sobre o Market Cap'] * 100,
+        '% EBITDA': display_df['% da Remuneração Total sobre o EBITDA'] * 100,
+        '% Net Income': display_df['% da Remuneração Total sobre o Net Income LTM'] * 100
     })
 
     # Botão de download
