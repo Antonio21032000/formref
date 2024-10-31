@@ -1,4 +1,3 @@
-```python
 import streamlit as st
 import pandas as pd
 
@@ -175,12 +174,9 @@ def main():
     if empresas != 'Todas as empresas':
         filtered_df = filtered_df[filtered_df['Nome_Companhia'] == empresas]
     
-    # Formatar as colunas para exibição
-    display_df = filtered_df.copy()
-    
     # Exibir tabela
     st.dataframe(
-        display_df,
+        filtered_df,
         column_config={
             'Nome_Companhia': 'Empresa',
             'Total_Remuneracao': st.column_config.NumberColumn(
@@ -207,4 +203,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-```
