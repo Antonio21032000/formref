@@ -107,7 +107,12 @@ def load_data():
         
         df['Total_Remuneracao'] = pd.to_numeric(df['Total_Remuneracao'], errors='coerce')
         
-        return df[selected_columns]
+        # Filtrando o DataFrame
+        df = df[selected_columns]
+        df = df[df['% da Remuneração Total sobre o Market Cap'].notna()]  # Remove linhas com NaN em Market Cap
+        df = df[df['Nome_Companhia'] != 'GAFISA S.A.']  # Remove GAFISA S.A.
+        
+        return df
     except Exception as e:
         st.error(f"Erro ao carregar dados: {str(e)}")
         return pd.DataFrame()
