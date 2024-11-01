@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import io
 
 # Configuração da página
 st.set_page_config(layout="wide", page_title="Compensation Analysis")
@@ -111,6 +112,13 @@ def load_data():
         st.error(f"Erro ao carregar dados: {str(e)}")
         return pd.DataFrame()
 
+def convert_df_to_excel(df):
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, sheet_name='Dados', index=False)
+    output.seek(0)
+    return output.getvalue()
+
 def main():
     # Título
     st.markdown('<div class="title-container"><h1>Compensation Analysis</h1></div>', unsafe_allow_html=True)
@@ -144,10 +152,11 @@ def main():
         '% Net Income': display_df['% da Remuneração Total sobre o Net Income LTM'] * 100
     })
 
-    # Botão de download
+    # Converter DataFrame para Excel e criar botão de download
+    excel_data = convert_df_to_excel(display_df)
     st.download_button(
         label="📥 Baixar dados",
-        data=b"placeholder",
+        data=excel_data,
         file_name="dados_empresas.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
