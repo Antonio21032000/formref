@@ -111,6 +111,7 @@ def load_data():
         df = df[selected_columns]
         df = df[df['% da Remuneração Total sobre o Market Cap'].notna()]  # Remove linhas com NaN em Market Cap
         df = df[df['Nome_Companhia'] != 'GAFISA S.A.']  # Remove GAFISA S.A.
+        df = df[df['Nome_Companhia'] != 'MOVIDA LOCAÇÃO DE VEÍCULOS S.A.']  # Remove MOVIDA
         
         return df
     except Exception as e:
