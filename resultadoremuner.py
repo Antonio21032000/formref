@@ -11,11 +11,11 @@ TITLE_BG_COLOR = '#DAA657'  # Dourado para o fundo do título
 TITLE_TEXT_COLOR = 'white'  # Branco para o texto do título
 TEXT_COLOR = '#333333'  # Cor principal do texto
 
-# CSS personalizado com suporte a modo tela cheia
-def get_css(fullscreen=False):
-    base_css = f"""
+# CSS personalizado
+st.markdown(f"""
+    <style>
     .reportview-container .main .block-container{{
-        max-width: {'' if fullscreen else '1200px'};
+        max-width: 1200px;
         padding-top: 0;
         padding-bottom: 0;
         padding-left: 0;
@@ -46,7 +46,6 @@ def get_css(fullscreen=False):
         padding: 1rem;
         border-radius: 10px;
         margin-bottom: 2rem;
-        {f'display: none;' if fullscreen else ''}
     }}
     .title-container h1 {{
         color: {TITLE_TEXT_COLOR};
@@ -55,10 +54,6 @@ def get_css(fullscreen=False):
         text-align: center;
         margin: 0;
     }}
-    .controls-container {{
-        {f'display: none;' if fullscreen else ''}
-        margin-bottom: 1rem;
-    }}
     .stDateInput>div>div>input {{
         color: {TEXT_COLOR};
         background-color: white;
@@ -66,7 +61,7 @@ def get_css(fullscreen=False):
     }}
     .stDataFrame {{
         background-color: white;
-        border-radius: {'' if fullscreen else '10px'};
+        border-radius: 10px;
         overflow: hidden;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }}
@@ -77,9 +72,6 @@ def get_css(fullscreen=False):
         background-color: {TITLE_BG_COLOR} !important;
         color: {TITLE_TEXT_COLOR} !important;
         padding: 0.5rem !important;
-        position: sticky;
-        top: 0;
-        z-index: 1;
     }}
     .stDataFrame td {{
         background-color: white !important;
@@ -92,31 +84,20 @@ def get_css(fullscreen=False):
         display: none;
     }}
     .block-container {{
-        padding-top: {'' if fullscreen else '0'} !important;
-        padding-bottom: {'' if fullscreen else '0'} !important;
-        max-width: {'' if fullscreen else '1200px'} !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
     }}
     header {{
         display: none !important;
     }}
-    {'''
-    /* Estilo para modo tela cheia */
-    .element-container:has(div.stDataFrame) {
-        position: fixed;
-        left: 0;
-        top: 0;
-        width: 100vw;
-        height: 100vh;
-        z-index: 1000;
-        background: white;
-        padding: 0 !important;
-    }
-    .stDataFrame {
-        height: 100vh !important;
-    }
-    ''' if fullscreen else ''}
-    """
-    return base_css
+    .button-container {{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }}
+    </style>
+""", unsafe_allow_html=True)
 
 def load_data():
     try:
@@ -151,13 +132,6 @@ def convert_df_to_excel(df):
     return output.getvalue()
 
 def main():
-    # Inicializar o estado de tela cheia
-    if 'fullscreen' not in st.session_state:
-        st.session_state.fullscreen = False
-    
-    # Aplicar CSS com base no estado de tela cheia
-    st.markdown(f'<style>{get_css(st.session_state.fullscreen)}</style>', unsafe_allow_html=True)
-    
     # Título
     st.markdown('<div class="title-container"><h1>Compensation Analysis</h1></div>', unsafe_allow_html=True)
     
@@ -168,36 +142,11 @@ def main():
         st.warning("Não foi possível carregar os dados.")
         return
     
-    # Container para controles
-    with st.container():
-        st.markdown('<div class="controls-container">', unsafe_allow_html=True)
-        
-        col1, col2, col3 = st.columns([1, 1, 4])
-        
-        with col1:
-            # Filtro único de empresas
-            empresas = st.selectbox(
-                'Empresas',
-                options=['Todas as empresas'] + sorted(df['Nome_Companhia'].unique().tolist())
-            )
-        
-        with col2:
-            # Botão de download
-            excel_data = convert_df_to_excel(df)
-            st.download_button(
-                label="📥 Baixar dados",
-                data=excel_data,
-                file_name="dados_empresas.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            )
-        
-        with col3:
-            # Botão de tela cheia
-            if st.button("🔍 " + ("Sair da Tela Cheia" if st.session_state.fullscreen else "Tela Cheia")):
-                st.session_state.fullscreen = not st.session_state.fullscreen
-                st.experimental_rerun()
-        
-        st.markdown('</div>', unsafe_allow_html=True)
+    # Filtro único de empresas
+    empresas = st.selectbox(
+        'Empresas',
+        options=['Todas as empresas'] + sorted(df['Nome_Companhia'].unique().tolist())
+    )
 
     # Criar DataFrame para exibição
     display_df = df.copy()
@@ -215,8 +164,31 @@ def main():
         '% Net Income': display_df['% da Remuneração Total sobre o Net Income LTM'] * 100
     })
 
-    # Altura da tabela baseada no modo de tela cheia
-    table_height = None if st.session_state.fullscreen else 600
+    # Container para os botões
+    col1, col2, col3 = st.columns([1, 1, 4])
+    
+    with col1:
+        # Botão de download
+        excel_data = convert_df_to_excel(display_df)
+        st.download_button(
+            label="📥 Baixar dados",
+            data=excel_data,
+            file_name="dados_empresas.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+    
+    with col2:
+        # Botão para expandir/recolher a tabela
+        is_expanded = st.button(
+            "🔍 Expandir tabela" if 'expanded' not in st.session_state or not st.session_state.expanded 
+            else "⚪ Recolher tabela"
+        )
+        
+        if is_expanded:
+            st.session_state.expanded = not st.session_state.get('expanded', False)
+
+    # Altura da tabela baseada no estado de expansão
+    table_height = 900 if st.session_state.get('expanded', False) else 600
 
     # Exibir tabela
     st.dataframe(
