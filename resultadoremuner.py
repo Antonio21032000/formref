@@ -90,6 +90,12 @@ st.markdown(f"""
     header {{
         display: none !important;
     }}
+    .button-container {{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -158,14 +164,31 @@ def main():
         '% Net Income': display_df['% da Remuneração Total sobre o Net Income LTM'] * 100
     })
 
-    # Converter DataFrame para Excel e criar botão de download
-    excel_data = convert_df_to_excel(display_df)
-    st.download_button(
-        label="📥 Baixar dados",
-        data=excel_data,
-        file_name="dados_empresas.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    )
+    # Container para os botões
+    col1, col2, col3 = st.columns([1, 1, 4])
+    
+    with col1:
+        # Botão de download
+        excel_data = convert_df_to_excel(display_df)
+        st.download_button(
+            label="📥 Baixar dados",
+            data=excel_data,
+            file_name="dados_empresas.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+    
+    with col2:
+        # Botão para expandir/recolher a tabela
+        is_expanded = st.button(
+            "🔍 Expandir tabela" if 'expanded' not in st.session_state or not st.session_state.expanded 
+            else "⚪ Recolher tabela"
+        )
+        
+        if is_expanded:
+            st.session_state.expanded = not st.session_state.get('expanded', False)
+
+    # Altura da tabela baseada no estado de expansão
+    table_height = 900 if st.session_state.get('expanded', False) else 600
 
     # Exibir tabela
     st.dataframe(
@@ -191,7 +214,7 @@ def main():
                 format="%.2f%%"
             )
         },
-        height=600,
+        height=table_height,
         use_container_width=True
     )
 
