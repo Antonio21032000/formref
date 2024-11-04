@@ -101,7 +101,14 @@ st.markdown(f"""
 
 def load_data():
     try:
+        # Carrega o DataFrame principal
         df = pd.read_excel('remtotal2024_novo.xlsx')
+        
+        # Carrega o DataFrame de setores
+        df_sectors = pd.read_excel('empresas_sectors.xlsx')
+        
+        # Renomeia as colunas do DataFrame de setores para corresponder ao merge
+        df_sectors.columns = ['Nome_Companhia', 'Setor']
         
         selected_columns = [
             'Nome_Companhia',
@@ -118,6 +125,9 @@ def load_data():
         df = df[df['% da Remuneração Total sobre o Market Cap'].notna()]  # Remove linhas com NaN em Market Cap
         df = df[df['Nome_Companhia'] != 'GAFISA S.A.']  # Remove GAFISA S.A.
         df = df[df['Nome_Companhia'] != 'MOVIDA LOCAÇÃO DE VEÍCULOS S.A.']  # Remove MOVIDA
+        
+        # Realiza o merge com o DataFrame de setores
+        df = pd.merge(df, df_sectors, on='Nome_Companhia', how='left')
         
         return df
     except Exception as e:
@@ -142,22 +152,42 @@ def main():
         st.warning("Não foi possível carregar os dados.")
         return
     
-    # Filtro único de empresas
-    empresas = st.selectbox(
-        'Empresas',
-        options=['Todas as empresas'] + sorted(df['Nome_Companhia'].unique().tolist())
-    )
+    # Criar colunas para os filtros
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # Filtro de setor
+        setores = st.selectbox(
+            'Setor',
+            options=['Todos os setores'] + sorted(df['Setor'].unique().tolist())
+        )
+    
+    with col2:
+        # Filtro de empresas
+        if setores != 'Todos os setores':
+            empresas_filtradas = df[df['Setor'] == setores]['Nome_Companhia'].unique()
+        else:
+            empresas_filtradas = df['Nome_Companhia'].unique()
+            
+        empresas = st.selectbox(
+            'Empresas',
+            options=['Todas as empresas'] + sorted(empresas_filtradas.tolist())
+        )
 
     # Criar DataFrame para exibição
     display_df = df.copy()
     
-    # Aplicar filtro se uma empresa específica for selecionada
+    # Aplicar filtros
+    if setores != 'Todos os setores':
+        display_df = display_df[display_df['Setor'] == setores]
+    
     if empresas != 'Todas as empresas':
         display_df = display_df[display_df['Nome_Companhia'] == empresas]
 
     # Preparar dados para exibição
     display_df = pd.DataFrame({
         'Empresa': display_df['Nome_Companhia'],
+        'Setor': display_df['Setor'],
         'Remuneração Total': display_df['Total_Remuneracao'],
         '% Market Cap': display_df['% da Remuneração Total sobre o Market Cap'] * 100,
         '% EBITDA': display_df['% da Remuneração Total sobre o EBITDA'] * 100,
@@ -196,6 +226,7 @@ def main():
         hide_index=True,
         column_config={
             'Empresa': 'Empresa',
+            'Setor': 'Setor',
             'Remuneração Total': st.column_config.NumberColumn(
                 'Remuneração Total',
                 help='Remuneração total em reais',
