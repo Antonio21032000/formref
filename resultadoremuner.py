@@ -125,8 +125,6 @@ def load_data():
         df = df[df['% da Remuneração Total sobre o Market Cap'].notna()]  # Remove linhas com NaN em Market Cap
         df = df[df['Nome_Companhia'] != 'GAFISA S.A.']  # Remove GAFISA S.A.
         df = df[df['Nome_Companhia'] != 'MOVIDA LOCAÇÃO DE VEÍCULOS S.A.']  # Remove MOVIDA
-        df = df[df['Nome_Companhia'] != 'TIM BRASIL SERVIÇOS E PARTICIPAÇÕES S.A.']  # Remove TIM
-        df = df[df['Nome_Companhia'] != 'VAMOS LOCAÇÃO DE CAMINHÕES, MÁQUINAS E EQUIPAMENTOS S.A.']  # Remove VAMOS
         
         # Realiza o merge com o DataFrame de setores
         df = pd.merge(df, df_sectors, on='Nome_Companhia', how='left')
@@ -196,13 +194,31 @@ def main():
         '% Net Income': display_df['% da Remuneração Total sobre o Net Income LTM'] * 100
     })
 
-    # Botão de download
-    st.download_button(
-        label="📥 Baixar dados",
-        data=convert_df_to_excel(display_df),
-        file_name="dados_empresas.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    )
+    # Container para os botões
+    col1, col2, col3 = st.columns([1, 1, 4])
+    
+    with col1:
+        # Botão de download
+        excel_data = convert_df_to_excel(display_df)
+        st.download_button(
+            label="📥 Baixar dados",
+            data=excel_data,
+            file_name="dados_empresas.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+    
+    with col2:
+        # Botão para expandir/recolher a tabela
+        is_expanded = st.button(
+            "🔍 Expandir tabela" if 'expanded' not in st.session_state or not st.session_state.expanded 
+            else "⚪ Recolher tabela"
+        )
+        
+        if is_expanded:
+            st.session_state.expanded = not st.session_state.get('expanded', False)
+
+    # Altura da tabela baseada no estado de expansão
+    table_height = 900 if st.session_state.get('expanded', False) else 600
 
     # Exibir tabela
     st.dataframe(
@@ -229,6 +245,7 @@ def main():
                 format="%.2f%%"
             )
         },
+        height=table_height,
         use_container_width=True
     )
 
