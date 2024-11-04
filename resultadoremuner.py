@@ -123,8 +123,15 @@ def load_data():
         # Filtrando o DataFrame
         df = df[selected_columns]
         df = df[df['% da Remuneração Total sobre o Market Cap'].notna()]  # Remove linhas com NaN em Market Cap
-        df = df[df['Nome_Companhia'] != 'GAFISA S.A.']  # Remove GAFISA S.A.
-        df = df[df['Nome_Companhia'] != 'MOVIDA LOCAÇÃO DE VEÍCULOS S.A.']  # Remove MOVIDA
+        
+        # Remove as empresas especificadas
+        companies_to_remove = [
+            'GAFISA S.A.',
+            'MOVIDA LOCAÇÃO DE VEÍCULOS S.A.',
+            'TIM BRASIL SERVIÇOS E PARTICIPAÇÕES S.A.',
+            'VAMOS LOCAÇÃO DE CAMINHÕES, MÁQUINAS E EQUIPAMENTOS S.A.'
+        ]
+        df = df[~df['Nome_Companhia'].isin(companies_to_remove)]
         
         # Realiza o merge com o DataFrame de setores
         df = pd.merge(df, df_sectors, on='Nome_Companhia', how='left')
