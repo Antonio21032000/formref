@@ -129,7 +129,8 @@ def load_data():
             'GAFISA S.A.',
             'MOVIDA LOCAÇÃO DE VEÍCULOS S.A.',
             'TIM BRASIL SERVIÇOS E PARTICIPAÇÕES S.A.',
-            'VAMOS LOCAÇÃO DE CAMINHÕES, MÁQUINAS E EQUIPAMENTOS S.A.'
+            'VAMOS LOCAÇÃO DE CAMINHÕES, MÁQUINAS E EQUIPAMENTOS S.A.',
+            'BCO BTG PACTUAL S.A.'  # Added this company to the removal list
         ]
         df = df[~df['Nome_Companhia'].isin(companies_to_remove)]
         
